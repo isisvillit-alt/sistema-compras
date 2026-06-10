@@ -118,7 +118,8 @@ body{
     <!-- BODY -->
     <div class="card-body p-4">
 
-        <form action="/crear_cuenta" method="POST">
+        <form action="/crear_cuenta/" method="POST">
+            {% csrf_token %}
 
             <!-- EMAIL -->
             <div class="mb-3">
@@ -175,11 +176,10 @@ body{
             </div>
 
             <!-- BOTÓN -->
-            <button class="btn btn-register w-100 mt-4">
+            <button type="submit" class="btn btn-register w-100 mt-4">
+            <i class="fa-solid fa-check"></i>
+            Crear Cuenta
 
-                <i class="fa-solid fa-check"></i>
-
-                Crear Cuenta
 
             </button>
 
