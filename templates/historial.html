@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Historial</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:#edf2f7;
+    font-family:Arial,sans-serif;
+    padding-bottom:140px;
+}
+
+/* HEADER */
+
+.header{
+    background:linear-gradient(135deg,#289167,#1a523c);
+    color:white;
+    padding:12px 10px 28px;
+    text-align:center;
+    border-bottom-left-radius:28px;
+    border-bottom-right-radius:28px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.15);
+}
+
+.header h1{
+    font-size:24px;
+    font-weight:bold;
+    margin-top:2px;
+    margin-bottom:2px;
+}
+
+.header p{
+    font-size:13px;
+    opacity:0.9;
+    margin-top:5px;
+}
+
+/* RESUMEN */
+
+.summary-container{
+    margin-top:-40px;
+    padding:0 18px;
+}
+
+.summary-card{
+    background:white;
+    border-radius:25px;
+    padding:20px 10px;
+    text-align:center;
+    box-shadow:0 5px 18px rgba(0,0,0,0.08);
+    height:220px;
+}
+
+.circle-icon{
+    width:75px;
+    height:75px;
+    border-radius:50%;
+    background:#1a523c;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:auto;
+    margin-bottom:12px;
+    color:white;
+    font-size:32px;
+}
+
+.summary-title{
+    font-size:20px;
+    color:#666;
+    margin-bottom:10px;
+}
+
+.summary-value{
+    font-size:30px;
+    font-weight:bold;
+    color:#1a523c;
+}
+
+/* BUSCADOR */
+
+.search-box{
+    margin:30px 20px 10px;
+}
+
+.search-box input{
+    width:100%;
+    border:none;
+    border-radius:28px;
+    padding:24px;
+    font-size:22px;
+    box-shadow:0 5px 18px rgba(0,0,0,0.08);
+}
+
+/* BOTONES */
+
+.buttons{
+    display:flex;
+    gap:18px;
+    padding:20px;
+}
+
+.btn-pro{
+    flex:1;
+    padding:20px;
+    border-radius:25px;
+    text-decoration:none;
+    color:white;
+    font-size:22px;
+    font-weight:bold;
+    text-align:center;
+    transition:0.3s;
+}
+
+.btn-trash{
+    background:#1b1d26;
+}
+
+.btn-new{
+    background:#257756;
+}
+
+.btn-pro:hover{
+    color:white;
+    transform:scale(1.02);
+}
+
+/* DÍAS */
+
+.day-box{
+    margin:18px 20px;
+    border-radius:35px;
+    overflow:hidden;
+    background:linear-gradient(135deg,#1a523c,#1a523c);
+    box-shadow:0 5px 18px rgba(0,0,0,0.1);
+}
+
+.day-header{
+    padding:35px 28px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    cursor:pointer;
+    color:white;
+    font-size:22px;
+    font-weight:bold;
+}
+
+.day-total{
+    background:white;
+    color:#1a523c;
+    padding:18px 25px;
+    border-radius:22px;
+    font-size:22px;
+    font-weight:bold;
+}
+
+/* CONTENIDO */
+
+.day-content{
+    display:none;
+    background:#f7f9fb;
+    padding:20px;
+}
+
+/* TARJETAS */
+
+.card-pro{
+    background:white;
+    border-radius:25px;
+    overflow:hidden;
+    margin-bottom:20px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+.card-pro img{
+    width:100%;
+    height:260px;
+    object-fit:cover;
+}
+
+.info{
+    padding:20px;
+}
+
+.info h4{
+    font-size:28px;
+    font-weight:bold;
+    margin-bottom:8px;
+}
+
+.info p{
+    color:#666;
+    font-size:18px;
+}
+
+.price{
+    font-size:35px;
+    color:#1a523c;
+    font-weight:bold;
+    margin-top:15px;
+}
+
+/* BOTONES CARD */
+
+.actions{
+    display:flex;
+    gap:12px;
+    margin-top:20px;
+}
+
+.btn-action{
+    flex:1;
+    text-align:center;
+    padding:15px;
+    border-radius:16px;
+    text-decoration:none;
+    color:white;
+    font-weight:bold;
+    font-size:18px;
+}
+
+.edit{
+    background:#21641f;
+}
+
+.delete{
+    background:#dc3545;
+}
+
+/* BOTÓN FLOTANTE */
+
+.btn-add{
+    position:fixed;
+    bottom:25px;
+    right:25px;
+    width:90px;
+    height:90px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#1a523c,#2b8a64);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:white;
+    font-size:45px;
+    text-decoration:none;
+    box-shadow:0 10px 30px rgba(0,0,0,0.2);
+}
+
+.btn-add:hover{
+    color:white;
+}
+
+/* MODAL */
+
+.modal-img{
+    display:none;
+    position:fixed;
+    z-index:9999;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.8);
+    justify-content:center;
+    align-items:center;
+}
+
+.modal-img img{
+    max-width:90%;
+    max-height:90%;
+    border-radius:25px;
+}
+
+/* RESPONSIVE */
+
+@media(max-width:768px){
+
+    .header h1{
+        font-size:32px;
+    }
+
+    .header p{
+        font-size:18px;
+    }
+
+    .summary-title{
+        font-size:18px;
+    }
+
+    .summary-value{
+        font-size:26px;
+    }
+
+    .btn-pro{
+        font-size:18px;
+        padding:18px;
+    }
+
+    .day-header{
+        font-size:18px;
+        padding:25px 20px;
+    }
+
+    .day-total{
+        font-size:18px;
+        padding:14px 18px;
+    }
+
+    .search-box input{
+        font-size:18px;
+        padding:20px;
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- HEADER -->
+
+<div class="header">
+
+    <div style="font-size:55px;">
+        <i class="fa-solid fa-cart-shopping"></i>
+    </div>
+
+    <h1>Historial de compras</h1>
+
+    <p>
+        Sistema inteligente de compras
+    </p>
+
+</div>
+
+<!-- RESUMEN -->
+
+<div class="summary-container">
+
+<div class="row g-3">
+
+<div class="col-6">
+
+<div class="summary-card">
+
+<div class="circle-icon">
+<i class="fa-solid fa-bag-shopping"></i>
+</div>
+
+<div class="summary-title">
+Compras
+</div>
+
+<div class="summary-value">
+{{ total_compras }}
+</div>
+
+</div>
+
+</div>
+
+<div class="col-6">
+
+<div class="summary-card">
+
+<div class="circle-icon">
+<i class="fa-solid fa-dollar-sign"></i>
+</div>
+
+<div class="summary-title">
+Gasto Total
+</div>
+
+<div class="summary-value">
+${{ total_gasto }}
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- BUSCADOR -->
+
+<div class="search-box">
+
+<input type="text"
+id="globalSearch"
+placeholder="Buscar compras...">
+
+</div>
+
+<!-- BOTONES -->
+
+<div class="buttons">
+
+<a href="/papelera" class="btn-pro btn-trash">
+
+<i class="fa-solid fa-trash"></i>
+Papelera
+
+</a>
+
+<a href="/compras" class="btn-pro btn-new">
+
+<i class="fa-solid fa-plus"></i>
+Nueva Compra
+
+</a>
+
+</div>
+
+<!-- DÍAS -->
+
+{% for d in por_dia %}
+
+<div class="day-box">
+
+<div class="day-header"
+onclick="toggleDay('dia{{ loop.index }}')">
+
+<div>
+
+<i class="fa-solid fa-calendar-days"></i>
+
+{{ d[0] }}
+
+</div>
+
+<div class="day-total">
+
+${{ d[2] }}
+
+</div>
+
+</div>
+
+<div class="day-content"
+id="dia{{ loop.index }}">
+
+<input type="text"
+class="form-control mb-3"
+placeholder="Buscar dentro del día..."
+onkeyup="buscarDentro(this,'contenido{{ loop.index }}')">
+
+<div id="contenido{{ loop.index }}">
+
+{% for compra in compras %}
+{% if compra[4] == d[0] %}
+
+<div class="card-pro item-dia">
+
+<img src="/uploads/{{ compra[5] }}"
+onclick="abrirImagen(this.src)">
+
+<div class="info">
+
+<h4>{{ compra[1] }}</h4>
+
+<p>{{ compra[2] }}</p>
+
+<div class="price">
+${{ compra[3] }}
+</div>
+
+<div class="actions">
+
+<a href="/editar/{{ compra[0] }}"
+class="btn-action edit">
+
+Editar
+
+</a>
+
+<a href="/eliminar/{{ compra[0] }}"
+class="btn-action delete"
+onclick="return confirmarEliminacion()">
+
+Eliminar
+
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+{% endif %}
+{% endfor %}
+
+</div>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+<!-- BOTÓN FLOTANTE -->
+
+<a href="/compras" class="btn-add">
+
+<i class="fa-solid fa-plus"></i>
+
+</a>
+
+<!-- MODAL -->
+
+<div class="modal-img"
+id="modalImg"
+onclick="cerrarImagen()">
+
+<img id="imgModal">
+
+</div>
+
+<script>
+
+function toggleDay(id){
+
+    let box = document.getElementById(id);
+
+    box.style.display =
+    box.style.display === "block"
+    ? "none"
+    : "block";
+
+}
+
+document.getElementById("globalSearch")
+.addEventListener("keyup", function(){
+
+    let value = this.value.toLowerCase();
+
+    document.querySelectorAll(".day-box")
+    .forEach(d=>{
+
+        d.style.display =
+        d.innerText.toLowerCase()
+        .includes(value)
+        ? "block"
+        : "none";
+
+    });
+
+});
+
+function buscarDentro(input,id){
+
+    let value = input.value.toLowerCase();
+
+    document.querySelectorAll("#"+id+" .item-dia")
+    .forEach(item=>{
+
+        item.style.display =
+        item.innerText.toLowerCase()
+        .includes(value)
+        ? "block"
+        : "none";
+
+    });
+
+}
+
+function abrirImagen(src){
+
+    document.getElementById("modalImg")
+    .style.display="flex";
+
+    document.getElementById("imgModal")
+    .src=src;
+
+}
+
+function cerrarImagen(){
+
+    document.getElementById("modalImg")
+    .style.display="none";
+
+}
+
+function confirmarEliminacion(){
+
+    return confirm("¿Seguro que deseas eliminar esta compra?");
+
+}
+
+</script>
+
+</body>
+</html>

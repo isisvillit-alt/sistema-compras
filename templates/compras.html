@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#1a523c">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Registrar Compras</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+
+/*  Sobrescribir color SUCCESS de Bootstrap */
+:root {
+    --bs-success: #1a523c;
+    --bs-success-rgb: 26, 82, 60;
+}
+
+body{
+    background: linear-gradient(135deg, #f4f6f9, #e9f5ee);
+    font-family: Arial, sans-serif;
+}
+
+/* Navbar más elegante */
+.navbar {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    background-color: #1a523c !important;
+}
+
+/* Card del formulario */
+.card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+
+/* Inputs más suaves */
+.form-control {
+    border-radius: 10px;
+    padding: 12px;
+}
+
+/* Botón principal */
+.btn-success {
+    border-radius: 12px;
+    font-weight: bold;
+    padding: 12px;
+    transition: 0.3s;
+    background-color: #1a523c !important;
+    border-color: #1a523c !important;
+}
+
+.btn-success:hover {
+    transform: scale(1.02);
+    background-color: #144234 !important;
+    border-color: #144234 !important;
+}
+
+/* Header título */
+.title {
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    color: white;
+}
+
+.icon {
+    margin-right: 6px;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-dark px-3 py-3">
+    <span class="navbar-brand title">
+        <i class="bi bi-cart-check icon"></i> Registrar Compra
+    </span>
+
+    <div class="d-flex gap-2">
+        <a href="/historial" class="btn btn-light btn-sm">
+            <i class="bi bi-clock-history"></i> Historial
+        </a>
+        <a href="/salir" class="btn btn-outline-light btn-sm">
+            <i class="bi bi-box-arrow-right"></i> Salir
+        </a>
+    </div>
+</nav>
+
+<!-- FORMULARIO -->
+<div class="container mt-4" style="max-width: 600px;">
+
+    <div class="card p-4">
+
+        <h5 class="mb-3 text-center text-success">
+            <i class="bi bi-plus-circle"></i> Nueva compra
+        </h5>
+
+        <form action="/guardar" method="POST" enctype="multipart/form-data">
+
+            <div class="mb-3">
+                <label class="form-label">Producto</label>
+                <input class="form-control" type="text" name="producto" placeholder="Ej. Tomate, Manzana, etc.">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Proveedor</label>
+                <input class="form-control" type="text" name="proveedor" placeholder="Nombre del proveedor">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Monto</label>
+                <input class="form-control" type="number" name="monto" placeholder="0.00">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Evidencia (foto)</label>
+                <input class="form-control"
+                       type="file"
+                       name="foto"
+                       accept="image/*"
+                       capture="camera">
+            </div>
+
+            <button class="btn btn-success w-100">
+                <i class="bi bi-check-circle"></i> Guardar Compra
+            </button>
+
+        </form>
+    </div>
+
+</div>
+
+<!-- PWA SERVICE WORKER -->
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/service-worker.js");
+}
+</script>
+<script>
+
+function guardarOffline(compra) {
+
+    let compras =
+        JSON.parse(
+            localStorage.getItem(
+                "compras"
+            )
+        ) || [];
+
+    compras.push(compra);
+
+    localStorage.setItem(
+        "compras",
+        JSON.stringify(compras)
+    );
+
+    console.log(
+        "Compra guardada offline"
+    );
+
+}
+
+</script>
+</body>
+</html>

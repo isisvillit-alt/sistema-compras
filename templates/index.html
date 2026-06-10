@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head> 
+<link rel="manifest" href="/static/manifest.json">
+
+<meta name="theme-color" content="#198754">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Sistema Compras</title>
+
+</head>
+
+<body>
+
+<h1>Registrar Compra</h1>
+
+<form action="/guardar" method="POST" enctype="multipart/form-data">
+
+<input type="text"
+       name="producto"
+       placeholder="Producto">
+
+<br><br>
+
+<input type="file"
+       name="foto"
+       accept="image/*"
+       capture="camera">
+
+<br><br>
+
+<button>
+Guardar Compra
+</button>
+
+</form>
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/service-worker.js");
+}
+</script>
+</body>
+
+</html>
