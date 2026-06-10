@@ -364,28 +364,21 @@ def uploads(filename):
 # =========================
 # REGISTRO
 # =========================
-@app.route('/registro')
-def registro():
-    return render_template('registro.html')
-
-
 @app.route('/crear_cuenta', methods=['POST'])
 def crear_cuenta():
 
-    usuario = request.form['usuario']
-    email = request.form['email']
+    usuario = request.form.get('usuario')
+    email = request.form.get('email')
+    password_raw = request.form.get('password')
 
-    password = generate_password_hash(
-        request.form['password']
-    )
+    if not usuario or not email or not password_raw:
+        return "Faltan datos del formulario"
+
+    password = generate_password_hash(password_raw)
 
     cursor = mysql.connection.cursor()
 
-    cursor.execute(
-        "SELECT * FROM usuarios WHERE email=%s",
-        (email,)
-    )
-
+    cursor.execute("SELECT * FROM usuarios WHERE email=%s", (email,))
     existe = cursor.fetchone()
 
     if existe:
@@ -399,7 +392,6 @@ def crear_cuenta():
     mysql.connection.commit()
 
     return redirect('/')
-
 
 # =========================
 # RECUPERAR PASSWORD
