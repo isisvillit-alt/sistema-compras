@@ -2,17 +2,13 @@
 <html lang="es">
 
 <head>
-
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>Crear Cuenta</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
 
@@ -59,7 +55,6 @@ body{
 
 .btn-register:hover{
     background-color: #123a2a;
-    color: white;
     transform: scale(1.02);
 }
 
@@ -109,65 +104,53 @@ body{
 
         <h3>Crear Cuenta</h3>
 
-        <small>
-            Registro seguro
-        </small>
+        <small>Registro seguro</small>
 
     </div>
 
-    <!-- BODY -->
+    <!-- FORM -->
     <div class="card-body p-4">
 
         <form action="/crear_cuenta" method="POST">
-    <!-- USUARIO -->
-<div class="mb-3">
 
-    <label class="form-label">
-        Usuario
-    </label>
+            <!-- USUARIO -->
+            <div class="mb-3">
 
-    <input
-        class="form-control"
-        type="text"
-        name="usuario"
-        placeholder="Nombre de usuario"
-        required>
+                <label class="form-label">Usuario</label>
 
-</div>
-            
+                <input class="form-control"
+                       type="text"
+                       name="usuario"
+                       placeholder="Nombre de usuario"
+                       required>
+
+            </div>
 
             <!-- EMAIL -->
             <div class="mb-3">
 
-                <label class="form-label">
-                    Correo Gmail
-                </label>
+                <label class="form-label">Correo Gmail</label>
 
-                <input
-                    class="form-control"
-                    type="email"
-                    name="email"
-                    placeholder="correo@gmail.com"
-                    required>
+                <input class="form-control"
+                       type="email"
+                       name="email"
+                       placeholder="correo@gmail.com"
+                       required>
 
             </div>
 
             <!-- PASSWORD -->
             <div class="mb-3 position-relative">
 
-                <label class="form-label">
-                    Contraseña
-                </label>
+                <label class="form-label">Contraseña</label>
 
-                <input
-                    class="form-control"
-                    type="password"
-                    id="password"
-                    name="password"
-                    placeholder="contraseña"
-                    required>
+                <input class="form-control"
+                       type="password"
+                       id="password"
+                       name="password"
+                       placeholder="Contraseña"
+                       required>
 
-                <!-- OJO -->
                 <i class="fa-solid fa-eye toggle-password"
                    id="togglePassword"></i>
 
@@ -176,26 +159,16 @@ body{
             <!-- REGLAS -->
             <div class="password-rules">
 
-                <div id="length" class="invalid">
-                    ❌ Mínimo 8 caracteres
-                </div>
-
-                <div id="uppercase" class="invalid">
-                    ❌ Una letra mayúscula
-                </div>
-
-                <div id="number" class="invalid">
-                    ❌ Un número
-                </div>
+                <div id="length" class="invalid">❌ Mínimo 8 caracteres</div>
+                <div id="uppercase" class="invalid">❌ Una letra mayúscula</div>
+                <div id="number" class="invalid">❌ Un número</div>
 
             </div>
 
             <!-- BOTÓN -->
             <button type="submit" class="btn btn-register w-100 mt-4">
-            <i class="fa-solid fa-check"></i>
-            Crear Cuenta
-
-
+                <i class="fa-solid fa-check"></i>
+                Crear Cuenta
             </button>
 
         </form>
@@ -204,11 +177,8 @@ body{
         <div class="text-center mt-4">
 
             <a href="/" class="link">
-
                 <i class="fa-solid fa-arrow-left"></i>
-
                 Volver al login
-
             </a>
 
         </div>
@@ -217,7 +187,7 @@ body{
 
 </div>
 
-<!-- VALIDACIÓN PASSWORD -->
+<!-- SCRIPT VALIDACIÓN -->
 <script>
 
 const password = document.getElementById('password');
@@ -226,77 +196,53 @@ const length = document.getElementById('length');
 const uppercase = document.getElementById('uppercase');
 const number = document.getElementById('number');
 
-password.addEventListener('keyup', () => {
+password.addEventListener('input', () => {
 
     const value = password.value;
 
     // 8 caracteres
     if(value.length >= 8){
-
-        length.classList.remove('invalid');
         length.classList.add('valid');
-
+        length.classList.remove('invalid');
         length.innerHTML = '✅ Mínimo 8 caracteres';
-
     } else {
-
-        length.classList.remove('valid');
         length.classList.add('invalid');
-
+        length.classList.remove('valid');
         length.innerHTML = '❌ Mínimo 8 caracteres';
-
     }
 
     // mayúscula
     if(/[A-Z]/.test(value)){
-
-        uppercase.classList.remove('invalid');
         uppercase.classList.add('valid');
-
+        uppercase.classList.remove('invalid');
         uppercase.innerHTML = '✅ Una letra mayúscula';
-
     } else {
-
-        uppercase.classList.remove('valid');
         uppercase.classList.add('invalid');
-
+        uppercase.classList.remove('valid');
         uppercase.innerHTML = '❌ Una letra mayúscula';
-
     }
 
     // número
     if(/[0-9]/.test(value)){
-
-        number.classList.remove('invalid');
         number.classList.add('valid');
-
+        number.classList.remove('invalid');
         number.innerHTML = '✅ Un número';
-
     } else {
-
-        number.classList.remove('valid');
         number.classList.add('invalid');
-
+        number.classList.remove('valid');
         number.innerHTML = '❌ Un número';
-
     }
 
 });
 
+// toggle password
+document.getElementById('togglePassword').addEventListener('click', () => {
 
-// MOSTRAR PASSWORD
-const togglePassword = document.getElementById('togglePassword');
+    const type = password.type === 'password' ? 'text' : 'password';
+    password.type = type;
 
-togglePassword.addEventListener('click', () => {
-
-    const type = password.getAttribute('type') === 'password'
-        ? 'text'
-        : 'password';
-
-    password.setAttribute('type', type);
-
-    togglePassword.classList.toggle('fa-eye');
-    togglePassword.classList.toggle('fa-eye-slash');
+    document.getElementById('togglePassword')
+        .classList.toggle('fa-eye-slash');
 
 });
 
