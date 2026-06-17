@@ -220,37 +220,17 @@ def restaurar(id):
 # =========================
 # REGISTRO
 # =========================
-@app.route('/crear_cuenta', methods=['POST'])
-def crear_cuenta():
-    try:
-        usuario = request.form.get('usuario')
-        email = request.form.get('email')
-        password_raw = request.form.get('password')
+<form action="/crear_cuenta" method="POST">
 
-        password = generate_password_hash(password_raw)
+    <input type="text" name="usuario" placeholder="Usuario">
 
-        db = get_db()
-        cursor = db.cursor()
+    <input type="email" name="email" placeholder="Email">
 
-        cursor.execute("SELECT * FROM usuarios WHERE email=%s", (email,))
-        existe = cursor.fetchone()
+    <input type="password" name="password" placeholder="Password">
 
-        if existe:
-            return "El correo ya existe"
+    <button type="submit">Crear cuenta</button>
 
-        cursor.execute("""
-            INSERT INTO usuarios(usuario, email, password)
-            VALUES (%s, %s, %s)
-        """, (usuario, email, password))
-
-        db.commit()
-        db.close()
-
-        return redirect('/')
-
-    except Exception as e:
-        return f"ERROR REAL: {str(e)}"
-
+</form>
 
 # =========================
 # RESET PASSWORD (FIX)
