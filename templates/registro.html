@@ -118,8 +118,23 @@ body{
     <!-- BODY -->
     <div class="card-body p-4">
 
-        <form action="/crear_cuenta/" method="POST">
-            {% csrf_token %}
+        <form action="/crear_cuenta" method="POST">
+    <!-- USUARIO -->
+<div class="mb-3">
+
+    <label class="form-label">
+        Usuario
+    </label>
+
+    <input
+        class="form-control"
+        type="text"
+        name="usuario"
+        placeholder="Nombre de usuario"
+        required>
+
+</div>
+            
 
             <!-- EMAIL -->
             <div class="mb-3">
