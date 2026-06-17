@@ -216,22 +216,6 @@ def restaurar(id):
 
     return redirect('/papelera')
 
-
-# =========================
-# REGISTRO
-# =========================
-<form action="/crear_cuenta" method="POST">
-
-    <input type="text" name="usuario" placeholder="Usuario">
-
-    <input type="email" name="email" placeholder="Email">
-
-    <input type="password" name="password" placeholder="Password">
-
-    <button type="submit">Crear cuenta</button>
-
-</form>
-
 # =========================
 # RESET PASSWORD (FIX)
 # =========================
