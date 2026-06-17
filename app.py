@@ -43,6 +43,9 @@ app.config['MYSQL_USER'] = os.getenv('MYSQLUSER')
 app.config['MYSQL_PASSWORD'] = os.getenv('MYSQLPASSWORD')
 app.config['MYSQL_DB'] = os.getenv('MYSQLDATABASE')
 app.config['MYSQL_PORT'] = int(os.getenv('MYSQLPORT', 3306))
+from flask_mysqldb import MySQL
+
+mysql = MySQL(app)
 
 # =========================
 # UPLOADS
