@@ -377,31 +377,32 @@ def registro():
 @app.route('/crear_cuenta', methods=['POST'])
 def crear_cuenta():
 
-    usuario = request.form.get('usuario')
-    email = request.form.get('email')
-    password_raw = request.form.get('password')
+    try:
+        usuario = request.form.get('usuario')
+        email = request.form.get('email')
+        password_raw = request.form.get('password')
 
-    if not usuario or not email or not password_raw:
-        return "Faltan datos del formulario"
+        password = generate_password_hash(password_raw)
 
-    password = generate_password_hash(password_raw)
+        cursor = mysql.connection.cursor()
 
-    cursor = mysql.connection.cursor()
+        cursor.execute("SELECT * FROM usuarios WHERE email=%s", (email,))
+        existe = cursor.fetchone()
 
-    cursor.execute("SELECT * FROM usuarios WHERE email=%s", (email,))
-    existe = cursor.fetchone()
+        if existe:
+            return "El correo ya existe"
 
-    if existe:
-        return "El correo ya existe"
+        cursor.execute("""
+            INSERT INTO usuarios(usuario, email, password)
+            VALUES (%s, %s, %s)
+        """, (usuario, email, password))
 
-    cursor.execute("""
-        INSERT INTO usuarios(usuario, email, password)
-        VALUES (%s, %s, %s)
-    """, (usuario, email, password))
+        mysql.connection.commit()
 
-    mysql.connection.commit()
+        return redirect('/')
 
-    return redirect('/')
+    except Exception as e:
+        return f"ERROR REAL: {str(e)}"
 
 # =========================
 # RECUPERAR PASSWORD
