@@ -360,7 +360,13 @@ def actualizar(id):
 def uploads(filename):
     return send_file(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
-
+# =========================
+# FORMULARIO REGISTRO
+# =========================
+@app.route('/registro')
+def registro():
+    return render_template('registro.html')
+    
 # =========================
 # REGISTRO
 # =========================
