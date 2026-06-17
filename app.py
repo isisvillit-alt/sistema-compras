@@ -36,13 +36,12 @@ serializer = URLSafeTimedSerializer(app.secret_key)
 # =========================
 # MYSQL
 # =========================
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'flaskuser'
-app.config['MYSQL_PASSWORD'] = '1234'
-app.config['MYSQL_DB'] = 'sistema_compras'
+import os
 
-mysql = MySQL(app)
-
+app.config['MYSQL_HOST'] = os.environ.get('MYSQL_HOST')
+app.config['MYSQL_USER'] = os.environ.get('MYSQL_USER')
+app.config['MYSQL_PASSWORD'] = os.environ.get('MYSQL_PASSWORD')
+app.config['MYSQL_DB'] = os.environ.get('MYSQL_DB')
 # =========================
 # UPLOADS
 # =========================
