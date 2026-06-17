@@ -374,9 +374,12 @@ def registro():
 # =========================
 # REGISTRO
 # =========================
+
 @app.route('/crear_cuenta', methods=['POST'])
 def crear_cuenta():
 
+    print("MYSQLHOST =", os.getenv("MYSQLHOST"))
+    
     try:
         usuario = request.form.get('usuario')
         email = request.form.get('email')
