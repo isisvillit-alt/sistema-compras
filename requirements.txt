@@ -1,6 +1,6 @@
 Flask
 gunicorn
-Flask-Mail
 PyMySQL
+Flask-Mail
 itsdangerous
 Werkzeug
