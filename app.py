@@ -332,14 +332,11 @@ def recuperar():
 
     return render_template('recuperar.html')
 # =========================
-# VER IMÁGENES SUBIDAS
+# MOSTRAR IMÁGENES
 # =========================
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
-    return send_from_directory(
-        app.config['UPLOAD_FOLDER'],
-        filename
-    )
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 # =========================
 # RUN
