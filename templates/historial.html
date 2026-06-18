@@ -443,17 +443,12 @@ Nueva Compra
 onclick="toggleDay('dia{{ loop.index }}')">
 
 <div>
-
 <i class="fa-solid fa-calendar-days"></i>
-
-{{ d[0] }}
-
+{{ d.fecha }}
 </div>
 
 <div class="day-total">
-
-${{ d[2] }}
-
+${{ d.total }}
 </div>
 
 </div>
@@ -469,38 +464,34 @@ onkeyup="buscarDentro(this,'contenido{{ loop.index }}')">
 <div id="contenido{{ loop.index }}">
 
 {% for compra in compras %}
-{% if compra[4] == d[0] %}
+{% if compra.fecha == d.fecha %}
 
 <div class="card-pro item-dia">
 
-<img src="/uploads/{{ compra[5] }}"
+<img src="/uploads/{{ compra.evidencia }}"
 onclick="abrirImagen(this.src)">
 
 <div class="info">
 
-<h4>{{ compra[1] }}</h4>
+<h4>{{ compra.producto }}</h4>
 
-<p>{{ compra[2] }}</p>
+<p>{{ compra.proveedor }}</p>
 
 <div class="price">
-${{ compra[3] }}
+${{ compra.monto }}
 </div>
 
 <div class="actions">
 
-<a href="/editar/{{ compra[0] }}"
+<a href="/editar/{{ compra.id }}"
 class="btn-action edit">
-
 Editar
-
 </a>
 
-<a href="/eliminar/{{ compra[0] }}"
+<a href="/eliminar/{{ compra.id }}"
 class="btn-action delete"
 onclick="return confirmarEliminacion()">
-
 Eliminar
-
 </a>
 
 </div>
@@ -510,6 +501,14 @@ Eliminar
 </div>
 
 {% endif %}
+{% endfor %}
+
+</div>
+
+</div>
+
+</div>
+
 {% endfor %}
 
 </div>
