@@ -58,8 +58,11 @@ def login():
 
 @app.route('/validar', methods=['POST'])
 def validar():
-    usuario = request.form['email']
-    password = request.form['password']
+    email = request.form.get('email')
+    password = request.form.get('password')
+
+    if not email or not password:
+        return "Faltan datos del login"
 
     db = get_db()
     cursor = db.cursor()
