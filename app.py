@@ -58,20 +58,20 @@ def login():
 
 @app.route('/validar', methods=['POST'])
 def validar():
-    usuario = request.form['usuario']
+    usuario = request.form['email']
     password = request.form['password']
 
     db = get_db()
     cursor = db.cursor()
 
-    cursor.execute("SELECT * FROM usuarios WHERE usuario=%s", (usuario,))
+    cursor.execute("SELECT * FROM usuarios WHERE email=%s", (email,))
     user = cursor.fetchone()
 
     db.close()
 
     if user and check_password_hash(user['password'], password):
         session['user_id'] = user['id']
-        session['usuario'] = user['usuario']
+        session['email'] = user['email']
         return redirect('/compras')
 
     return "Login incorrecto"
