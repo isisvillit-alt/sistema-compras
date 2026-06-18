@@ -2,7 +2,7 @@ import os
 import uuid
 from datetime import datetime
 
-from flask import Flask, render_template, request, redirect, send_file, session, send_from_directory
+from flask import Flask, render_template, request, redirect, send_file, session
 from itsdangerous import URLSafeTimedSerializer
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -58,23 +58,20 @@ def login():
 
 @app.route('/validar', methods=['POST'])
 def validar():
-    email = request.form.get('email')
-    password = request.form.get('password')
-
-    if not email or not password:
-        return "Faltan datos del login"
+    usuario = request.form['usuario']
+    password = request.form['password']
 
     db = get_db()
     cursor = db.cursor()
 
-    cursor.execute("SELECT * FROM usuarios WHERE email=%s", (email,))
+    cursor.execute("SELECT * FROM usuarios WHERE usuario=%s", (usuario,))
     user = cursor.fetchone()
 
     db.close()
 
     if user and check_password_hash(user['password'], password):
         session['user_id'] = user['id']
-        session['email'] = user['email']
+        session['usuario'] = user['usuario']
         return redirect('/compras')
 
     return "Login incorrecto"
@@ -106,19 +103,13 @@ def compras():
 def guardar():
     if 'user_id' not in session:
         return redirect('/')
-producto = request.form.get('producto')
-proveedor = request.form.get('proveedor')
-monto = request.form.get('monto')
 
-if not producto or not proveedor or not monto:
-    return "Faltan datos del formulario"
-    
+    producto = request.form['producto']
+    proveedor = request.form['proveedor']
+    monto = request.form['monto']
     fecha = datetime.now().date()
 
-   file = request.files.get('foto')
-
-if not file or file.filename == '':
-    return "No se envió la imagen" 
+    file = request.files['foto']
     nombre_unico = str(uuid.uuid4()) + "_" + secure_filename(file.filename)
 
     file.save(os.path.join(app.config['UPLOAD_FOLDER'], nombre_unico))
@@ -142,46 +133,18 @@ if not file or file.filename == '':
 # =========================
 @app.route('/historial')
 def historial():
-
     if 'user_id' not in session:
         return redirect('/')
 
     db = get_db()
     cursor = db.cursor()
 
-    cursor.execute("""
-        SELECT *
-        FROM compras
-        WHERE user_id=%s
-        AND eliminado=0
-        ORDER BY fecha DESC
-    """, (session['user_id'],))
-
+    cursor.execute("SELECT * FROM compras WHERE user_id=%s AND eliminado=0 ORDER BY id DESC",
+                   (session['user_id'],))
     compras = cursor.fetchall()
 
-    cursor.execute("""
-        SELECT
-            fecha,
-            COUNT(*) as cantidad,
-            SUM(monto) as total
-        FROM compras
-        WHERE user_id=%s
-        AND eliminado=0
-        GROUP BY fecha
-        ORDER BY fecha DESC
-    """, (session['user_id'],))
-
-    por_dia = cursor.fetchall()
-
-    cursor.execute("""
-        SELECT
-            COUNT(*) as total,
-            IFNULL(SUM(monto),0) as gasto
-        FROM compras
-        WHERE user_id=%s
-        AND eliminado=0
-    """, (session['user_id'],))
-
+    cursor.execute("SELECT COUNT(*) AS total, IFNULL(SUM(monto),0) AS gasto FROM compras WHERE user_id=%s AND eliminado=0",
+                   (session['user_id'],))
     resumen = cursor.fetchone()
 
     db.close()
@@ -189,7 +152,6 @@ def historial():
     return render_template(
         'historial.html',
         compras=compras,
-        por_dia=por_dia,
         total_compras=resumen['total'],
         total_gasto=resumen['gasto']
     )
@@ -341,12 +303,7 @@ def recuperar():
         return "No existe"
 
     return render_template('recuperar.html')
-# =========================
-# MOSTRAR IMÁGENES
-# =========================
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 
 # =========================
 # RUN
