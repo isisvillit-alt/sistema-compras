@@ -2,7 +2,7 @@ import os
 import uuid
 from datetime import datetime
 
-from flask import Flask, render_template, request, redirect, send_file, session
+from flask import Flask, render_template, request, redirect, send_file, session, send_from_directory
 from itsdangerous import URLSafeTimedSerializer
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -332,7 +332,15 @@ def recuperar():
         return "No existe"
 
     return render_template('recuperar.html')
-
+# =========================
+# VER IMÁGENES SUBIDAS
+# =========================
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(
+        app.config['UPLOAD_FOLDER'],
+        filename
+    )
 
 # =========================
 # RUN
