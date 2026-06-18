@@ -215,6 +215,57 @@ def restaurar(id):
     db.close()
 
     return redirect('/papelera')
+    # =========================
+# FORMULARIO REGISTRO
+# =========================
+@app.route('/registro')
+def registro():
+    return render_template('registro.html')
+
+
+# =========================
+# CREAR CUENTA
+# =========================
+@app.route('/crear_cuenta', methods=['POST'])
+def crear_cuenta():
+
+    try:
+
+        usuario = request.form.get('usuario')
+        email = request.form.get('email')
+        password_raw = request.form.get('password')
+
+        if not usuario or not email or not password_raw:
+            return "Faltan datos"
+
+        password = generate_password_hash(password_raw)
+
+        db = get_db()
+        cursor = db.cursor()
+
+        cursor.execute(
+            "SELECT * FROM usuarios WHERE email=%s",
+            (email,)
+        )
+
+        existe = cursor.fetchone()
+
+        if existe:
+            db.close()
+            return "El correo ya existe"
+
+        cursor.execute("""
+            INSERT INTO usuarios(usuario, email, password)
+            VALUES (%s, %s, %s)
+        """, (usuario, email, password))
+
+        db.commit()
+        db.close()
+
+        return redirect('/')
+
+    except Exception as e:
+        return f"ERROR REAL: {str(e)}"
 
 # =========================
 # RESET PASSWORD (FIX)
