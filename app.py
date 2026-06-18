@@ -106,13 +106,19 @@ def compras():
 def guardar():
     if 'user_id' not in session:
         return redirect('/')
+producto = request.form.get('producto')
+proveedor = request.form.get('proveedor')
+monto = request.form.get('monto')
 
-    producto = request.form['producto']
-    proveedor = request.form['proveedor']
-    monto = request.form['monto']
+if not producto or not proveedor or not monto:
+    return "Faltan datos del formulario"
+    
     fecha = datetime.now().date()
 
-    file = request.files['foto']
+   file = request.files.get('foto')
+
+if not file or file.filename == '':
+    return "No se envió la imagen" 
     nombre_unico = str(uuid.uuid4()) + "_" + secure_filename(file.filename)
 
     file.save(os.path.join(app.config['UPLOAD_FOLDER'], nombre_unico))
