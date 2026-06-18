@@ -2,8 +2,7 @@ import os
 import uuid
 from datetime import datetime
 
-from flask import Flask, render_template, request, redirect, send_file, session, send_from_directory
-from itsdangerous import URLSafeTimedSerializer
+from itsdangerous imfrom flask import Flask, render_template, request, redirect, send_file, session, send_from_directoryport URLSafeTimedSerializer
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message
