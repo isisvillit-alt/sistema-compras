@@ -34,7 +34,7 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 
 # La clave debe guardarse en Render como SECRET_KEY
-app.secret_key = os.environ["sistema_compras_2026"]
+app.secret_key = os.environ["SECRET_KEY"]
 
 app.config["SESSION_COOKIE_SECURE"] = True
 app.config["SESSION_COOKIE_HTTPONLY"] = True
