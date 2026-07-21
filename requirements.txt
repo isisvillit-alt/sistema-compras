@@ -4,3 +4,4 @@ PyMySQL
 Flask-Mail
 itsdangerous
 Werkzeug
+psycopg[binary]
