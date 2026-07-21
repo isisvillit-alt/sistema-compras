@@ -1,7 +1,7 @@
 Flask
 gunicorn
-PyMySQL
 Flask-Mail
 itsdangerous
 Werkzeug
 psycopg[binary]
+
