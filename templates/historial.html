@@ -9,7 +9,7 @@
         content="width=device-width, initial-scale=1"
     >
 
-    <title>Historial</title>
+    <title>Historial de compras</title>
 
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
@@ -22,6 +22,19 @@
     >
 
     <style>
+        :root {
+            --verde-principal: #1a523c;
+            --verde-secundario: #287b5a;
+            --verde-claro: #e4eee9;
+            --fondo: #edf2f7;
+            --blanco: #ffffff;
+            --texto: #222222;
+            --texto-secundario: #68716d;
+            --rojo: #dc3545;
+            --negro: #1b1d26;
+            --amarillo-carpeta: #f2c94c;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -29,335 +42,573 @@
         }
 
         body {
-            background: #edf2f7;
+            background: var(--fondo);
+            color: var(--texto);
             font-family: Arial, sans-serif;
-            padding-bottom: 140px;
+            padding-bottom: 125px;
         }
 
-        /* HEADER */
+        button,
+        input {
+            font-family: inherit;
+        }
+
+        /* =========================
+           ENCABEZADO
+        ========================= */
 
         .header {
             background:
                 linear-gradient(
                     135deg,
                     #289167,
-                    #1a523c
+                    var(--verde-principal)
                 );
 
-            color: white;
-            padding: 12px 10px 70px;
+            color: var(--blanco);
+            padding: 18px 12px 72px;
             text-align: center;
 
-            border-bottom-left-radius: 28px;
-            border-bottom-right-radius: 28px;
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
 
             box-shadow:
-                0 3px 10px rgba(0, 0, 0, 0.15);
+                0 5px 18px rgba(0, 0, 0, 0.16);
         }
 
         .header-icon {
-            font-size: 55px;
+            font-size: 51px;
         }
 
         .header h1 {
-            font-size: 32px;
+            margin: 7px 0 3px;
+            font-size: 29px;
             font-weight: bold;
-            margin-top: 2px;
-            margin-bottom: 2px;
         }
 
         .header p {
-            font-size: 18px;
+            margin: 0;
+            font-size: 16px;
             opacity: 0.9;
-            margin-top: 5px;
         }
 
-        /* RESUMEN */
+        /* =========================
+           RESUMEN GENERAL
+        ========================= */
 
         .summary-container {
-            margin-top: -42px;
+            margin-top: -44px;
             padding: 0 14px;
         }
 
         .summary-card {
-            background: white;
+            min-height: 175px;
+            padding: 18px 8px;
+
+            background: var(--blanco);
             border-radius: 25px;
-            padding: 18px 10px;
             text-align: center;
 
             box-shadow:
-                0 5px 18px rgba(0, 0, 0, 0.08);
-
-            min-height: 182px;
+                0 5px 18px rgba(0, 0, 0, 0.09);
         }
 
         .circle-icon {
             width: 64px;
             height: 64px;
-            border-radius: 50%;
-            background: #1a523c;
+            margin: 0 auto 12px;
 
             display: flex;
             align-items: center;
             justify-content: center;
 
-            margin: auto;
-            margin-bottom: 12px;
+            border-radius: 50%;
+            background: var(--verde-principal);
+            color: var(--blanco);
 
-            color: white;
             font-size: 27px;
         }
 
         .summary-title {
-            font-size: 17px;
-            color: #666;
-            margin-bottom: 8px;
+            margin-bottom: 7px;
+            color: var(--texto-secundario);
+            font-size: 16px;
         }
 
         .summary-value {
+            color: var(--verde-principal);
             font-size: 25px;
             font-weight: bold;
-            color: #1a523c;
         }
 
-        /* BUSCADOR */
+        /* =========================
+           FILTROS
+        ========================= */
 
-        .search-box {
-            margin: 28px 15px 10px;
-        }
+        .filters-panel {
+            margin: 27px 14px 12px;
+            padding: 18px;
 
-        .search-box input {
-            width: 100%;
-            border: none;
-            outline: none;
-
-            border-radius: 28px;
-            padding: 19px;
-
-            font-size: 17px;
+            background: var(--blanco);
+            border-radius: 25px;
 
             box-shadow:
                 0 5px 18px rgba(0, 0, 0, 0.08);
         }
 
-        /* BOTONES SUPERIORES */
+        .filters-title {
+            margin-bottom: 15px;
 
-        .buttons {
-            display: flex;
-            gap: 14px;
-            padding: 15px;
-        }
-
-        .btn-pro {
-            flex: 1;
-            padding: 17px 10px;
-
-            border-radius: 22px;
-
-            text-decoration: none;
-            color: white;
-
-            font-size: 17px;
+            color: var(--verde-principal);
+            font-size: 18px;
             font-weight: bold;
+        }
+
+        .filter-label {
+            display: block;
+            margin-bottom: 7px;
+
+            color: var(--texto-secundario);
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 14px 15px;
+
+            border: 1px solid #d7e0dc;
+            border-radius: 17px;
+            outline: none;
+
+            background: #f8faf9;
+            font-size: 16px;
+        }
+
+        .filter-input:focus {
+            border-color: var(--verde-secundario);
+
+            box-shadow:
+                0 0 0 3px rgba(40, 123, 90, 0.13);
+        }
+
+        .filter-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 9px;
+            margin-top: 15px;
+        }
+
+        .filter-button {
+            border: none;
+            padding: 12px 8px;
+            border-radius: 15px;
+
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .filter-button-clear {
+            grid-column: 1 / -1;
+            background: #e7eeeb;
+            color: var(--verde-principal);
+        }
+
+        .filter-button-open {
+            background: var(--verde-secundario);
+            color: var(--blanco);
+        }
+
+        .filter-button-close {
+            background: var(--negro);
+            color: var(--blanco);
+        }
+
+        .filter-result {
+            margin-top: 14px;
+            padding: 12px;
+
+            background: var(--verde-claro);
+            border-radius: 15px;
+
+            color: var(--verde-principal);
             text-align: center;
-
-            transition: 0.3s;
+            font-size: 14px;
+            font-weight: bold;
         }
 
-        .btn-trash {
-            background: #1b1d26;
+        /* =========================
+           BOTONES PRINCIPALES
+        ========================= */
+
+        .main-buttons {
+            display: flex;
+            gap: 12px;
+            padding: 10px 14px 16px;
         }
 
-        .btn-new {
-            background: #257756;
+        .main-button {
+            flex: 1;
+            padding: 16px 8px;
+
+            border-radius: 20px;
+
+            color: var(--blanco);
+            text-align: center;
+            text-decoration: none;
+
+            font-size: 16px;
+            font-weight: bold;
         }
 
-        .btn-pro:hover {
-            color: white;
-            transform: scale(1.02);
+        .main-button:hover {
+            color: var(--blanco);
+            opacity: 0.92;
         }
 
-        /* DÍAS */
+        .trash-button {
+            background: var(--negro);
+        }
 
-        .day-box {
-            margin: 18px 15px;
-            border-radius: 28px;
+        .new-button {
+            background: var(--verde-secundario);
+        }
+
+        /* =========================
+           ÁREA DEL HISTORIAL
+        ========================= */
+
+        .history-container {
+            padding: 0 14px 20px;
+        }
+
+        details > summary {
+            list-style: none;
+        }
+
+        details > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        /* =========================
+           CARPETA PRINCIPAL
+        ========================= */
+
+        .master-folder {
             overflow: hidden;
+
+            border-radius: 29px;
 
             background:
                 linear-gradient(
                     135deg,
-                    #1a523c,
-                    #267858
+                    #0d3024,
+                    #175940
                 );
 
             box-shadow:
-                0 5px 18px rgba(0, 0, 0, 0.1);
+                0 8px 25px rgba(0, 0, 0, 0.17);
         }
 
-        .day-header {
-            padding: 22px 18px;
-
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-
+        .master-summary,
+        .month-summary,
+        .day-summary {
             cursor: pointer;
-            color: white;
 
-            font-size: 17px;
-            font-weight: bold;
-        }
-
-        .day-date {
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: space-between;
+            gap: 10px;
+
+            color: var(--blanco);
         }
 
-        .day-total {
-            background: white;
-            color: #1a523c;
-
-            padding: 12px 15px;
-            border-radius: 18px;
-
-            font-size: 17px;
-            font-weight: bold;
+        .master-summary {
+            padding: 21px 16px;
         }
 
-        /* CONTENIDO DEL DÍA */
+        .master-content {
+            padding: 12px;
 
-        .day-content {
-            display: none;
-            background: #f7f9fb;
-            padding: 15px;
+            background: #d8e5df;
         }
 
-        .day-search {
-            border: 1px solid #ddd;
-            border-radius: 16px;
-            padding: 13px;
-            margin-bottom: 15px;
-        }
+        /* =========================
+           CARPETA DEL MES
+        ========================= */
 
-        /* TARJETAS */
-
-        .card-pro {
-            background: white;
-            border-radius: 22px;
+        .month-folder {
+            margin-bottom: 13px;
             overflow: hidden;
-            margin-bottom: 18px;
+
+            border-radius: 25px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #174c39,
+                    #247354
+                );
 
             box-shadow:
-                0 4px 12px rgba(0, 0, 0, 0.08);
+                0 5px 16px rgba(0, 0, 0, 0.11);
         }
 
-        .card-pro img {
+        .month-folder:last-child {
+            margin-bottom: 0;
+        }
+
+        .month-summary {
+            padding: 18px 14px;
+        }
+
+        .month-content {
+            padding: 10px;
+
+            background: #e3ebe7;
+        }
+
+        /* =========================
+           CARPETA DEL DÍA
+        ========================= */
+
+        .day-folder {
+            margin-bottom: 10px;
+            overflow: hidden;
+
+            border-radius: 21px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #267858,
+                    var(--verde-principal)
+                );
+        }
+
+        .day-folder:last-child {
+            margin-bottom: 0;
+        }
+
+        .day-summary {
+            padding: 16px 13px;
+        }
+
+        .day-content {
+            padding: 13px;
+
+            background: #f5f8f7;
+        }
+
+        /* =========================
+           INFORMACIÓN DE CARPETAS
+        ========================= */
+
+        .folder-main {
+            min-width: 0;
+
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .folder-icon-master {
+            color: var(--amarillo-carpeta);
+            font-size: 33px;
+        }
+
+        .folder-icon-month {
+            color: var(--amarillo-carpeta);
+            font-size: 28px;
+        }
+
+        .folder-icon-day {
+            color: var(--blanco);
+            font-size: 23px;
+        }
+
+        .folder-text {
+            min-width: 0;
+        }
+
+        .folder-title {
+            display: block;
+
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+
+            font-size: 17px;
+            font-weight: bold;
+        }
+
+        .master-folder .folder-title {
+            font-size: 19px;
+        }
+
+        .folder-description {
+            display: block;
+            margin-top: 3px;
+
+            font-size: 13px;
+            opacity: 0.86;
+        }
+
+        .folder-right {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .folder-total {
+            padding: 9px 11px;
+
+            border-radius: 15px;
+
+            background: var(--blanco);
+            color: var(--verde-principal);
+
+            white-space: nowrap;
+
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .folder-arrow {
+            transition: transform 0.25s;
+        }
+
+        details[open] > summary .folder-arrow {
+            transform: rotate(180deg);
+        }
+
+        /* =========================
+           TARJETAS DE COMPRAS
+        ========================= */
+
+        .purchase-card {
+            margin-bottom: 14px;
+            overflow: hidden;
+
+            background: var(--blanco);
+            border-radius: 20px;
+
+            box-shadow:
+                0 4px 13px rgba(0, 0, 0, 0.08);
+        }
+
+        .purchase-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .evidence-image {
             width: 100%;
-            height: 230px;
+            height: 220px;
+
+            display: block;
             object-fit: cover;
             cursor: pointer;
+
+            background: #e7eeeb;
         }
 
-        .archivo-pdf {
-            min-height: 150px;
+        .pdf-preview {
+            min-height: 140px;
 
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
 
-            background: #e9f1ed;
-            color: #1a523c;
+            background: #e7efeb;
+            color: var(--verde-principal);
 
-            font-size: 45px;
+            font-size: 43px;
         }
 
-        .archivo-pdf a {
-            margin-top: 12px;
-            color: #1a523c;
-            font-size: 16px;
-            font-weight: bold;
+        .pdf-preview a {
+            margin-top: 10px;
+
+            color: var(--verde-principal);
             text-decoration: none;
-        }
 
-        .info {
-            padding: 18px;
-        }
-
-        .info h4 {
-            font-size: 25px;
+            font-size: 15px;
             font-weight: bold;
+        }
+
+        .purchase-info {
+            padding: 17px;
+        }
+
+        .purchase-name {
             margin-bottom: 8px;
-            color: #222;
-        }
 
-        .info p {
-            color: #666;
-            font-size: 17px;
-            margin-bottom: 4px;
-        }
-
-        .date-text {
-            font-size: 14px;
-            color: #888;
-            margin-top: 8px;
-        }
-
-        .price {
-            font-size: 31px;
-            color: #1a523c;
+            color: var(--texto);
+            font-size: 23px;
             font-weight: bold;
-            margin-top: 12px;
         }
 
-        /* BOTONES DE TARJETA */
+        .purchase-provider,
+        .purchase-date {
+            margin-bottom: 5px;
 
-        .actions {
+            color: var(--texto-secundario);
+            font-size: 15px;
+        }
+
+        .purchase-price {
+            margin-top: 11px;
+
+            color: var(--verde-principal);
+            font-size: 29px;
+            font-weight: bold;
+        }
+
+        .purchase-actions {
             display: flex;
-            gap: 10px;
-            margin-top: 18px;
+            gap: 9px;
+            margin-top: 16px;
         }
 
-        .btn-action {
+        .purchase-button {
             flex: 1;
+            padding: 12px 7px;
+
+            border-radius: 14px;
+
+            color: var(--blanco);
             text-align: center;
-
-            padding: 14px 8px;
-            border-radius: 15px;
-
             text-decoration: none;
-            color: white;
 
+            font-size: 14px;
             font-weight: bold;
-            font-size: 16px;
         }
 
-        .evidence {
-            background: #257756;
-        }
-
-        .delete {
-            background: #dc3545;
-        }
-
-        .btn-action:hover {
-            color: white;
+        .purchase-button:hover {
+            color: var(--blanco);
             opacity: 0.9;
         }
 
-        /* SIN COMPRAS */
+        .evidence-button {
+            background: var(--verde-secundario);
+        }
+
+        .delete-button {
+            background: var(--rojo);
+        }
+
+        /* =========================
+           SIN RESULTADOS
+        ========================= */
 
         .empty-history {
-            margin: 25px 15px;
-            padding: 35px 20px;
+            padding: 32px 18px;
 
-            background: white;
+            background: var(--blanco);
             border-radius: 25px;
 
+            color: var(--texto-secundario);
             text-align: center;
-            color: #666;
 
             box-shadow:
                 0 5px 18px rgba(0, 0, 0, 0.08);
@@ -365,84 +616,108 @@
 
         .empty-history i {
             display: block;
-            font-size: 50px;
-            color: #1a523c;
-            margin-bottom: 15px;
+            margin-bottom: 13px;
+
+            color: var(--verde-principal);
+            font-size: 48px;
         }
 
-        /* BOTÓN FLOTANTE */
+        /* =========================
+           BOTÓN FLOTANTE
+        ========================= */
 
-        .btn-add {
+        .floating-button {
             position: fixed;
-            bottom: 25px;
-            right: 25px;
+            right: 22px;
+            bottom: 24px;
 
-            width: 75px;
-            height: 75px;
-            border-radius: 50%;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    #1a523c,
-                    #2b8a64
-                );
+            width: 72px;
+            height: 72px;
 
             display: flex;
             align-items: center;
             justify-content: center;
 
-            color: white;
-            font-size: 38px;
+            border-radius: 50%;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--verde-principal),
+                    #2b8a64
+                );
+
+            color: var(--blanco);
             text-decoration: none;
+            font-size: 36px;
 
             box-shadow:
-                0 10px 30px rgba(0, 0, 0, 0.2);
+                0 10px 28px rgba(0, 0, 0, 0.24);
         }
 
-        .btn-add:hover {
-            color: white;
+        .floating-button:hover {
+            color: var(--blanco);
         }
 
-        /* MODAL DE IMAGEN */
+        /* =========================
+           MODAL DE IMAGEN
+        ========================= */
 
-        .modal-img {
-            display: none;
+        .image-modal {
             position: fixed;
             z-index: 9999;
 
-            top: 0;
-            left: 0;
+            inset: 0;
 
-            width: 100%;
-            height: 100%;
-
-            background: rgba(0, 0, 0, 0.85);
-
-            justify-content: center;
+            display: none;
             align-items: center;
+            justify-content: center;
+
+            background: rgba(0, 0, 0, 0.87);
         }
 
-        .modal-img img {
+        .image-modal img {
             max-width: 92%;
             max-height: 90%;
+
             border-radius: 20px;
         }
 
-        /* RESPONSIVE */
+        /* =========================
+           RESPONSIVE
+        ========================= */
 
         @media (min-width: 768px) {
             .summary-container,
-            .search-box,
-            .buttons,
+            .filters-panel,
+            .main-buttons,
             .history-container {
                 max-width: 900px;
                 margin-left: auto;
                 margin-right: auto;
             }
 
-            .card-pro img {
+            .evidence-image {
                 height: 350px;
+            }
+        }
+
+        @media (max-width: 390px) {
+            .folder-total {
+                padding: 8px 9px;
+                font-size: 12px;
+            }
+
+            .folder-title {
+                font-size: 15px;
+            }
+
+            .folder-description {
+                font-size: 12px;
+            }
+
+            .master-folder .folder-title {
+                font-size: 17px;
             }
         }
     </style>
@@ -450,9 +725,11 @@
 
 <body>
 
-    <!-- HEADER -->
+    <!-- =========================
+         ENCABEZADO
+    ========================== -->
 
-    <div class="header">
+    <header class="header">
 
         <div class="header-icon">
             <i class="fa-solid fa-cart-shopping"></i>
@@ -461,14 +738,17 @@
         <h1>Historial de compras</h1>
 
         <p>
-            Sistema inteligente de compras
+            Todas tus compras organizadas
+            por mes y por día
         </p>
 
-    </div>
+    </header>
 
-    <!-- RESUMEN -->
+    <!-- =========================
+         RESUMEN GENERAL
+    ========================== -->
 
-    <div class="summary-container">
+    <section class="summary-container">
 
         <div class="row g-3">
 
@@ -505,7 +785,9 @@
                     </div>
 
                     <div class="summary-value">
-                        ${{ "%.2f"|format(total_gasto|float) }}
+                        ${{ "%.2f"|format(
+                            total_gasto|float
+                        ) }}
                     </div>
 
                 </div>
@@ -514,28 +796,107 @@
 
         </div>
 
-    </div>
+    </section>
 
-    <!-- BUSCADOR GLOBAL -->
+    <!-- =========================
+         FILTROS
+    ========================== -->
 
-    <div class="search-box">
+    <section class="filters-panel">
 
-        <input
-            type="search"
-            id="globalSearch"
-            placeholder="Buscar compras..."
-            autocomplete="off"
+        <div class="filters-title">
+            <i class="fa-solid fa-filter"></i>
+            Buscar compras
+        </div>
+
+        <div class="mb-3">
+
+            <label
+                for="textFilter"
+                class="filter-label"
+            >
+                Producto o proveedor
+            </label>
+
+            <input
+                type="search"
+                id="textFilter"
+                class="filter-input"
+                placeholder="Ejemplo: computadora, Amazon..."
+                autocomplete="off"
+            >
+
+        </div>
+
+        <div>
+
+            <label
+                for="dateFilter"
+                class="filter-label"
+            >
+                Día de la compra
+            </label>
+
+            <input
+                type="date"
+                id="dateFilter"
+                class="filter-input"
+            >
+
+        </div>
+
+        <div class="filter-actions">
+
+            <button
+                type="button"
+                id="expandAll"
+                class="filter-button filter-button-open"
+            >
+                <i class="fa-solid fa-folder-open"></i>
+                Abrir todo
+            </button>
+
+            <button
+                type="button"
+                id="collapseAll"
+                class="filter-button filter-button-close"
+            >
+                <i class="fa-solid fa-folder-closed"></i>
+                Cerrar todo
+            </button>
+
+            <button
+                type="button"
+                id="clearFilters"
+                class="filter-button filter-button-clear"
+            >
+                <i class="fa-solid fa-rotate-left"></i>
+                Limpiar búsqueda
+            </button>
+
+        </div>
+
+        <div
+            id="filterResult"
+            class="filter-result"
         >
+            {{ total_compras }}
+            compras — ${{ "%.2f"|format(
+                total_gasto|float
+            ) }}
+        </div>
 
-    </div>
+    </section>
 
-    <!-- BOTONES -->
+    <!-- =========================
+         BOTONES PRINCIPALES
+    ========================== -->
 
-    <div class="buttons">
+    <nav class="main-buttons">
 
         <a
             href="{{ url_for('papelera') }}"
-            class="btn-pro btn-trash"
+            class="main-button trash-button"
         >
             <i class="fa-solid fa-trash"></i>
             Papelera
@@ -543,279 +904,822 @@
 
         <a
             href="{{ url_for('compras') }}"
-            class="btn-pro btn-new"
+            class="main-button new-button"
         >
             <i class="fa-solid fa-plus"></i>
             Nueva compra
         </a>
 
-    </div>
+    </nav>
 
-    <!-- HISTORIAL -->
+    <!-- =========================
+         HISTORIAL
+    ========================== -->
 
-    <div class="history-container">
+    <main class="history-container">
 
-        {% if compras %}
+        {% if meses %}
 
-            {% for fecha, grupo in compras|groupby("fecha")|reverse %}
+            <!-- CARPETA QUE CONTIENE TODOS LOS MESES -->
 
-                <div class="day-box">
+            <details
+                class="master-folder"
+                id="masterFolder"
+                open
+            >
 
-                    <div
-                        class="day-header"
-                        onclick="toggleDay('dia{{ loop.index }}')"
-                    >
+                <summary class="master-summary">
 
-                        <div class="day-date">
+                    <div class="folder-main">
 
-                            <i class="fa-solid fa-calendar-days"></i>
+                        <i
+                            class="fa-solid fa-folder-tree
+                            folder-icon-master"
+                        ></i>
 
-                            <span>
-                                {{ fecha.strftime("%d/%m/%Y") }}
+                        <div class="folder-text">
+
+                            <span class="folder-title">
+                                Todas las compras
+                            </span>
+
+                            <span class="folder-description">
+                                <span id="masterCount">
+                                    {{ total_compras }}
+                                </span>
+
+                                <span id="masterCountText">
+                                    {% if total_compras == 1 %}
+                                        compra registrada
+                                    {% else %}
+                                        compras registradas
+                                    {% endif %}
+                                </span>
                             </span>
 
                         </div>
 
-                        <div class="day-total">
+                    </div>
+
+                    <div class="folder-right">
+
+                        <span
+                            class="folder-total"
+                            id="masterTotal"
+                        >
                             ${{ "%.2f"|format(
-                                (grupo|sum(attribute="monto"))|float
+                                total_gasto|float
                             ) }}
-                        </div>
+                        </span>
+
+                        <i
+                            class="fa-solid fa-chevron-down
+                            folder-arrow"
+                        ></i>
 
                     </div>
 
-                    <div
-                        class="day-content"
-                        id="dia{{ loop.index }}"
-                    >
+                </summary>
 
-                        <input
-                            type="search"
-                            class="form-control day-search"
-                            placeholder="Buscar dentro del día..."
-                            oninput="buscarDentro(
-                                this,
-                                'contenido{{ loop.index }}'
-                            )"
+                <div class="master-content">
+
+                    {% for mes in meses %}
+
+                        <!-- CARPETA DEL MES -->
+
+                        <details
+                            class="month-folder"
+                            data-month="{{ mes.clave }}"
+                            {% if loop.first %}open{% endif %}
                         >
 
-                        <div id="contenido{{ loop.index }}">
+                            <summary class="month-summary">
 
-                            {% for compra in grupo %}
+                                <div class="folder-main">
 
-                                <div class="card-pro item-dia">
+                                    <i
+                                        class="fa-solid fa-folder
+                                        folder-icon-month"
+                                    ></i>
 
-                                    {% if compra.evidencia %}
+                                    <div class="folder-text">
 
-                                        {% set extension =
-                                            compra.evidencia
-                                            .rsplit(".", 1)[-1]
-                                            |lower
-                                        %}
+                                        <span class="folder-title">
+                                            {{ mes.nombre }}
+                                        </span>
 
-                                        {% if extension in [
-                                            "jpg",
-                                            "jpeg",
-                                            "png",
-                                            "webp"
-                                        ] %}
+                                        <span class="folder-description">
 
-                                            <img
-                                                src="{{ url_for(
-                                                    'mostrar_archivo',
-                                                    nombre_archivo=compra.evidencia
-                                                ) }}"
-                                                alt="Evidencia de {{ compra.producto }}"
-                                                loading="lazy"
-                                                onclick="abrirImagen(this.src)"
-                                            >
+                                            <span class="month-count">
+                                                {{ mes.cantidad }}
+                                            </span>
 
-                                        {% else %}
+                                            <span class="month-count-text">
+                                                {% if mes.cantidad == 1 %}
+                                                    compra
+                                                {% else %}
+                                                    compras
+                                                {% endif %}
+                                            </span>
 
-                                            <div class="archivo-pdf">
-
-                                                <i class="fa-solid fa-file-pdf"></i>
-
-                                                <a
-                                                    href="{{ url_for(
-                                                        'mostrar_archivo',
-                                                        nombre_archivo=compra.evidencia
-                                                    ) }}"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                >
-                                                    Ver evidencia
-                                                </a>
-
-                                            </div>
-
-                                        {% endif %}
-
-                                    {% endif %}
-
-                                    <div class="info">
-
-                                        <h4>
-                                            {{ compra.producto }}
-                                        </h4>
-
-                                        <p>
-                                            <i class="fa-solid fa-building"></i>
-                                            {{ compra.proveedor }}
-                                        </p>
-
-                                        <p class="date-text">
-                                            <i class="fa-solid fa-calendar"></i>
-
-                                            {{ compra.fecha.strftime(
-                                                "%d/%m/%Y"
-                                            ) }}
-                                        </p>
-
-                                        <div class="price">
-                                            ${{ "%.2f"|format(
-                                                compra.monto|float
-                                            ) }}
-                                        </div>
-
-                                        <div class="actions">
-
-                                            {% if compra.evidencia %}
-
-                                                <a
-                                                    href="{{ url_for(
-                                                        'mostrar_archivo',
-                                                        nombre_archivo=compra.evidencia
-                                                    ) }}"
-                                                    class="btn-action evidence"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                >
-                                                    <i class="fa-solid fa-eye"></i>
-                                                    Evidencia
-                                                </a>
-
-                                            {% endif %}
-
-                                            <a
-                                                href="{{ url_for(
-                                                    'eliminar',
-                                                    id=compra.id
-                                                ) }}"
-                                                class="btn-action delete"
-                                                onclick="return confirmarEliminacion()"
-                                            >
-                                                <i class="fa-solid fa-trash"></i>
-                                                Eliminar
-                                            </a>
-
-                                        </div>
+                                        </span>
 
                                     </div>
 
                                 </div>
 
-                            {% endfor %}
+                                <div class="folder-right">
 
-                        </div>
+                                    <span
+                                        class="folder-total
+                                        month-total"
+                                    >
+                                        ${{ "%.2f"|format(
+                                            mes.total|float
+                                        ) }}
+                                    </span>
 
-                    </div>
+                                    <i
+                                        class="fa-solid fa-chevron-down
+                                        folder-arrow"
+                                    ></i>
+
+                                </div>
+
+                            </summary>
+
+                            <div class="month-content">
+
+                                {% for dia in mes.dias %}
+
+                                    <!-- CARPETA DEL DÍA -->
+
+                                    <details
+                                        class="day-folder"
+                                        data-date="{{ dia.clave }}"
+                                        {% if loop.first %}open{% endif %}
+                                    >
+
+                                        <summary class="day-summary">
+
+                                            <div class="folder-main">
+
+                                                <i
+                                                    class="fa-solid fa-folder-open
+                                                    folder-icon-day"
+                                                ></i>
+
+                                                <div class="folder-text">
+
+                                                    <span class="folder-title">
+                                                        {{ dia.fecha.strftime(
+                                                            "%d/%m/%Y"
+                                                        ) }}
+                                                    </span>
+
+                                                    <span class="folder-description">
+
+                                                        <span class="day-count">
+                                                            {{ dia.cantidad }}
+                                                        </span>
+
+                                                        <span class="day-count-text">
+                                                            {% if dia.cantidad == 1 %}
+                                                                compra
+                                                            {% else %}
+                                                                compras
+                                                            {% endif %}
+                                                        </span>
+
+                                                    </span>
+
+                                                </div>
+
+                                            </div>
+
+                                            <div class="folder-right">
+
+                                                <span
+                                                    class="folder-total
+                                                    day-total"
+                                                >
+                                                    ${{ "%.2f"|format(
+                                                        dia.total|float
+                                                    ) }}
+                                                </span>
+
+                                                <i
+                                                    class="fa-solid
+                                                    fa-chevron-down
+                                                    folder-arrow"
+                                                ></i>
+
+                                            </div>
+
+                                        </summary>
+
+                                        <div class="day-content">
+
+                                            {% for compra in dia.compras %}
+
+                                                <article
+                                                    class="purchase-card"
+                                                    data-product="{{
+                                                        compra.producto|lower
+                                                    }}"
+                                                    data-provider="{{
+                                                        compra.proveedor|lower
+                                                    }}"
+                                                    data-date="{{
+                                                        compra.fecha.isoformat()
+                                                    }}"
+                                                    data-amount="{{
+                                                        compra.monto
+                                                    }}"
+                                                >
+
+                                                    {% if compra.evidencia %}
+
+                                                        {% set extension =
+                                                            compra.evidencia
+                                                            .rsplit(
+                                                                ".",
+                                                                1
+                                                            )[-1]
+                                                            |lower
+                                                        %}
+
+                                                        {% if extension in [
+                                                            "jpg",
+                                                            "jpeg",
+                                                            "png",
+                                                            "webp"
+                                                        ] %}
+
+                                                            <img
+                                                                class="evidence-image"
+                                                                src="{{ url_for(
+                                                                    'mostrar_archivo',
+                                                                    nombre_archivo=compra.evidencia
+                                                                ) }}"
+                                                                alt="Evidencia de {{
+                                                                    compra.producto
+                                                                }}"
+                                                                loading="lazy"
+                                                                onclick="abrirImagen(
+                                                                    this.src
+                                                                )"
+                                                            >
+
+                                                        {% else %}
+
+                                                            <div class="pdf-preview">
+
+                                                                <i
+                                                                    class="fa-solid
+                                                                    fa-file-pdf"
+                                                                ></i>
+
+                                                                <a
+                                                                    href="{{ url_for(
+                                                                        'mostrar_archivo',
+                                                                        nombre_archivo=compra.evidencia
+                                                                    ) }}"
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                >
+                                                                    Abrir evidencia
+                                                                </a>
+
+                                                            </div>
+
+                                                        {% endif %}
+
+                                                    {% endif %}
+
+                                                    <div class="purchase-info">
+
+                                                        <h3 class="purchase-name">
+                                                            {{ compra.producto }}
+                                                        </h3>
+
+                                                        <p class="purchase-provider">
+                                                            <i
+                                                                class="fa-solid
+                                                                fa-store"
+                                                            ></i>
+
+                                                            {{ compra.proveedor }}
+                                                        </p>
+
+                                                        <p class="purchase-date">
+                                                            <i
+                                                                class="fa-solid
+                                                                fa-calendar"
+                                                            ></i>
+
+                                                            {{ compra.fecha.strftime(
+                                                                "%d/%m/%Y"
+                                                            ) }}
+                                                        </p>
+
+                                                        <div class="purchase-price">
+                                                            ${{ "%.2f"|format(
+                                                                compra.monto|float
+                                                            ) }}
+                                                        </div>
+
+                                                        <div class="purchase-actions">
+
+                                                            {% if compra.evidencia %}
+
+                                                                <a
+                                                                    href="{{ url_for(
+                                                                        'mostrar_archivo',
+                                                                        nombre_archivo=compra.evidencia
+                                                                    ) }}"
+                                                                    class="purchase-button
+                                                                    evidence-button"
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                >
+                                                                    <i
+                                                                        class="fa-solid
+                                                                        fa-eye"
+                                                                    ></i>
+
+                                                                    Evidencia
+                                                                </a>
+
+                                                            {% endif %}
+
+                                                            <a
+                                                                href="{{ url_for(
+                                                                    'eliminar',
+                                                                    id=compra.id
+                                                                ) }}"
+                                                                class="purchase-button
+                                                                delete-button"
+                                                                onclick="return confirmarEliminacion()"
+                                                            >
+                                                                <i
+                                                                    class="fa-solid
+                                                                    fa-trash"
+                                                                ></i>
+
+                                                                Eliminar
+                                                            </a>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                </article>
+
+                                            {% endfor %}
+
+                                        </div>
+
+                                    </details>
+
+                                {% endfor %}
+
+                            </div>
+
+                        </details>
+
+                    {% endfor %}
 
                 </div>
 
-            {% endfor %}
+            </details>
+
+            <!-- MENSAJE SIN RESULTADOS -->
+
+            <section
+                id="noResults"
+                class="empty-history"
+                hidden
+            >
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <h3>No se encontraron compras</h3>
+
+                <p>
+                    Cambia el producto, proveedor
+                    o la fecha seleccionada.
+                </p>
+
+            </section>
 
         {% else %}
 
-            <div class="empty-history">
+            <section class="empty-history">
 
                 <i class="fa-solid fa-cart-shopping"></i>
 
                 <h3>No hay compras registradas</h3>
 
                 <p>
-                    Pulsa “Nueva compra” para agregar la primera.
+                    Pulsa “Nueva compra” para
+                    agregar la primera.
                 </p>
 
-            </div>
+            </section>
 
         {% endif %}
 
-    </div>
+    </main>
 
-    <!-- BOTÓN FLOTANTE -->
+    <!-- =========================
+         BOTÓN FLOTANTE
+    ========================== -->
 
     <a
         href="{{ url_for('compras') }}"
-        class="btn-add"
+        class="floating-button"
         aria-label="Nueva compra"
     >
         <i class="fa-solid fa-plus"></i>
     </a>
 
-    <!-- MODAL -->
+    <!-- =========================
+         MODAL DE IMAGEN
+    ========================== -->
 
     <div
-        class="modal-img"
-        id="modalImg"
+        class="image-modal"
+        id="imageModal"
         onclick="cerrarImagen()"
     >
+
         <img
-            id="imgModal"
+            id="modalImage"
             alt="Evidencia ampliada"
         >
+
     </div>
 
     <script>
-        function toggleDay(id) {
-            const box = document.getElementById(id);
+        const textFilter =
+            document.getElementById(
+                "textFilter"
+            );
 
-            if (!box) {
-                return;
-            }
+        const dateFilter =
+            document.getElementById(
+                "dateFilter"
+            );
 
-            box.style.display =
-                box.style.display === "block"
-                    ? "none"
-                    : "block";
+        const clearFilters =
+            document.getElementById(
+                "clearFilters"
+            );
+
+        const expandAll =
+            document.getElementById(
+                "expandAll"
+            );
+
+        const collapseAll =
+            document.getElementById(
+                "collapseAll"
+            );
+
+        const noResults =
+            document.getElementById(
+                "noResults"
+            );
+
+        const masterFolder =
+            document.getElementById(
+                "masterFolder"
+            );
+
+        const filterResult =
+            document.getElementById(
+                "filterResult"
+            );
+
+
+        function normalizar(texto) {
+            return String(texto || "")
+                .normalize("NFD")
+                .replace(
+                    /[\u0300-\u036f]/g,
+                    ""
+                )
+                .toLowerCase()
+                .trim();
         }
 
 
-        const globalSearch =
-            document.getElementById("globalSearch");
+        function formatoMoneda(valor) {
+            return new Intl.NumberFormat(
+                "es-MX",
+                {
+                    style: "currency",
+                    currency: "MXN",
+                    minimumFractionDigits: 2,
+                }
+            ).format(valor);
+        }
 
-        if (globalSearch) {
-            globalSearch.addEventListener(
-                "input",
-                function () {
-                    const value = this.value
-                        .toLowerCase()
-                        .trim();
 
-                    document
-                        .querySelectorAll(".day-box")
-                        .forEach(function (day) {
-                            const contenido = day.textContent
-                                .toLowerCase();
+        function textoCantidad(cantidad) {
+            return cantidad === 1
+                ? "compra"
+                : "compras";
+        }
 
-                            const coincide =
-                                contenido.includes(value);
 
-                            day.style.display =
-                                coincide
-                                    ? "block"
-                                    : "none";
+        function aplicarFiltros() {
+            if (!masterFolder) {
+                return;
+            }
 
-                            if (value && coincide) {
-                                const dayContent =
-                                    day.querySelector(
-                                        ".day-content"
+            const texto =
+                normalizar(textFilter.value);
+
+            const fecha =
+                dateFilter.value;
+
+            const hayFiltro =
+                Boolean(texto || fecha);
+
+            let totalGeneral = 0;
+            let cantidadGeneral = 0;
+
+            document
+                .querySelectorAll(
+                    ".month-folder"
+                )
+                .forEach(function (monthFolder) {
+                    let totalMes = 0;
+                    let cantidadMes = 0;
+
+                    monthFolder
+                        .querySelectorAll(
+                            ".day-folder"
+                        )
+                        .forEach(function (dayFolder) {
+                            let totalDia = 0;
+                            let cantidadDia = 0;
+
+                            dayFolder
+                                .querySelectorAll(
+                                    ".purchase-card"
+                                )
+                                .forEach(function (card) {
+                                    const producto =
+                                        normalizar(
+                                            card.dataset.product
+                                        );
+
+                                    const proveedor =
+                                        normalizar(
+                                            card.dataset.provider
+                                        );
+
+                                    const fechaCompra =
+                                        card.dataset.date;
+
+                                    const monto =
+                                        Number(
+                                            card.dataset.amount
+                                        ) || 0;
+
+                                    const coincideTexto =
+                                        !texto
+                                        || producto.includes(
+                                            texto
+                                        )
+                                        || proveedor.includes(
+                                            texto
+                                        );
+
+                                    const coincideFecha =
+                                        !fecha
+                                        || fechaCompra === fecha;
+
+                                    const visible =
+                                        coincideTexto
+                                        && coincideFecha;
+
+                                    card.hidden = !visible;
+
+                                    if (visible) {
+                                        cantidadDia += 1;
+                                        totalDia += monto;
+                                    }
+                                });
+
+                            dayFolder.hidden =
+                                cantidadDia === 0;
+
+                            const dayCount =
+                                dayFolder.querySelector(
+                                    ".day-count"
+                                );
+
+                            const dayCountText =
+                                dayFolder.querySelector(
+                                    ".day-count-text"
+                                );
+
+                            const dayTotal =
+                                dayFolder.querySelector(
+                                    ".day-total"
+                                );
+
+                            if (dayCount) {
+                                dayCount.textContent =
+                                    cantidadDia;
+                            }
+
+                            if (dayCountText) {
+                                dayCountText.textContent =
+                                    textoCantidad(
+                                        cantidadDia
                                     );
+                            }
 
-                                if (dayContent) {
-                                    dayContent.style.display =
-                                        "block";
-                                }
+                            if (dayTotal) {
+                                dayTotal.textContent =
+                                    formatoMoneda(
+                                        totalDia
+                                    );
+                            }
+
+                            if (
+                                hayFiltro
+                                && cantidadDia > 0
+                            ) {
+                                dayFolder.open = true;
+                            }
+
+                            cantidadMes += cantidadDia;
+                            totalMes += totalDia;
+                        });
+
+                    monthFolder.hidden =
+                        cantidadMes === 0;
+
+                    const monthCount =
+                        monthFolder.querySelector(
+                            ".month-count"
+                        );
+
+                    const monthCountText =
+                        monthFolder.querySelector(
+                            ".month-count-text"
+                        );
+
+                    const monthTotal =
+                        monthFolder.querySelector(
+                            ".month-total"
+                        );
+
+                    if (monthCount) {
+                        monthCount.textContent =
+                            cantidadMes;
+                    }
+
+                    if (monthCountText) {
+                        monthCountText.textContent =
+                            textoCantidad(
+                                cantidadMes
+                            );
+                    }
+
+                    if (monthTotal) {
+                        monthTotal.textContent =
+                            formatoMoneda(
+                                totalMes
+                            );
+                    }
+
+                    if (
+                        hayFiltro
+                        && cantidadMes > 0
+                    ) {
+                        monthFolder.open = true;
+                    }
+
+                    cantidadGeneral += cantidadMes;
+                    totalGeneral += totalMes;
+                });
+
+            const masterCount =
+                document.getElementById(
+                    "masterCount"
+                );
+
+            const masterCountText =
+                document.getElementById(
+                    "masterCountText"
+                );
+
+            const masterTotal =
+                document.getElementById(
+                    "masterTotal"
+                );
+
+            if (masterCount) {
+                masterCount.textContent =
+                    cantidadGeneral;
+            }
+
+            if (masterCountText) {
+                masterCountText.textContent =
+                    cantidadGeneral === 1
+                        ? "compra registrada"
+                        : "compras registradas";
+            }
+
+            if (masterTotal) {
+                masterTotal.textContent =
+                    formatoMoneda(
+                        totalGeneral
+                    );
+            }
+
+            if (filterResult) {
+                filterResult.textContent =
+                    cantidadGeneral
+                    + " "
+                    + textoCantidad(
+                        cantidadGeneral
+                    )
+                    + " — "
+                    + formatoMoneda(
+                        totalGeneral
+                    );
+            }
+
+            masterFolder.hidden =
+                cantidadGeneral === 0;
+
+            noResults.hidden =
+                cantidadGeneral !== 0;
+
+            if (
+                hayFiltro
+                && cantidadGeneral > 0
+            ) {
+                masterFolder.open = true;
+            }
+        }
+
+
+        if (textFilter) {
+            textFilter.addEventListener(
+                "input",
+                aplicarFiltros
+            );
+        }
+
+
+        if (dateFilter) {
+            dateFilter.addEventListener(
+                "change",
+                aplicarFiltros
+            );
+        }
+
+
+        if (clearFilters) {
+            clearFilters.addEventListener(
+                "click",
+                function () {
+                    textFilter.value = "";
+                    dateFilter.value = "";
+
+                    aplicarFiltros();
+
+                    if (masterFolder) {
+                        masterFolder.hidden = false;
+                        masterFolder.open = true;
+                    }
+                }
+            );
+        }
+
+
+        if (expandAll) {
+            expandAll.addEventListener(
+                "click",
+                function () {
+                    document
+                        .querySelectorAll(
+                            ".master-folder, "
+                            + ".month-folder, "
+                            + ".day-folder"
+                        )
+                        .forEach(function (folder) {
+                            if (!folder.hidden) {
+                                folder.open = true;
                             }
                         });
                 }
@@ -823,57 +1727,69 @@
         }
 
 
-        function buscarDentro(input, id) {
-            const value = input.value
-                .toLowerCase()
-                .trim();
+        if (collapseAll) {
+            collapseAll.addEventListener(
+                "click",
+                function () {
+                    document
+                        .querySelectorAll(
+                            ".month-folder, "
+                            + ".day-folder"
+                        )
+                        .forEach(function (folder) {
+                            folder.open = false;
+                        });
 
-            const contenido =
-                document.getElementById(id);
-
-            if (!contenido) {
-                return;
-            }
-
-            contenido
-                .querySelectorAll(".item-dia")
-                .forEach(function (item) {
-                    const coincide = item.textContent
-                        .toLowerCase()
-                        .includes(value);
-
-                    item.style.display =
-                        coincide
-                            ? "block"
-                            : "none";
-                });
+                    if (masterFolder) {
+                        masterFolder.open = true;
+                    }
+                }
+            );
         }
 
 
         function abrirImagen(src) {
             const modal =
-                document.getElementById("modalImg");
+                document.getElementById(
+                    "imageModal"
+                );
 
             const imagen =
-                document.getElementById("imgModal");
+                document.getElementById(
+                    "modalImage"
+                );
 
-            modal.style.display = "flex";
             imagen.src = src;
+            modal.style.display = "flex";
         }
 
 
         function cerrarImagen() {
-            document
-                .getElementById("modalImg")
-                .style.display = "none";
+            const modal =
+                document.getElementById(
+                    "imageModal"
+                );
+
+            modal.style.display = "none";
         }
 
 
         function confirmarEliminacion() {
             return confirm(
-                "¿Seguro que deseas enviar esta compra a la papelera?"
+                "¿Deseas enviar esta compra "
+                + "a la papelera?"
             );
         }
+
+
+        document.addEventListener(
+            "keydown",
+            function (evento) {
+                if (evento.key === "Escape") {
+                    cerrarImagen();
+                }
+            }
+        );
     </script>
 
 </body>

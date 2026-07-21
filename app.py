@@ -29,13 +29,13 @@ from werkzeug.security import (
 from werkzeug.utils import secure_filename
 
 
-# =========================
+# ==================================================
 # FUNCIONES AUXILIARES
-# =========================
+# ==================================================
+
 def variable_obligatoria(nombre):
     """
     Obtiene una variable de entorno obligatoria.
-    Detiene la aplicación si la variable no existe.
     """
     valor = os.environ.get(nombre)
 
@@ -47,9 +47,17 @@ def variable_obligatoria(nombre):
     return valor
 
 
-# =========================
-# APP
-# =========================
+def usuario_autenticado():
+    """
+    Comprueba si existe una sesión iniciada.
+    """
+    return "user_id" in session
+
+
+# ==================================================
+# CONFIGURACIÓN DE FLASK
+# ==================================================
+
 app = Flask(__name__)
 
 app.secret_key = variable_obligatoria(
@@ -60,7 +68,7 @@ app.config["SESSION_COOKIE_SECURE"] = True
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
-# Máximo 10 MB por archivo
+# Máximo 10 MB por evidencia
 app.config["MAX_CONTENT_LENGTH"] = (
     10 * 1024 * 1024
 )
@@ -70,30 +78,54 @@ serializer = URLSafeTimedSerializer(
 )
 
 
-# =========================
-# MAIL
-# =========================
+# ==================================================
+# EVITAR CACHÉ EN PÁGINAS DINÁMICAS
+# ==================================================
+
+@app.after_request
+def evitar_cache(response):
+    """
+    Evita que el navegador muestre versiones antiguas
+    del historial después de guardar una compra.
+    """
+    if request.endpoint != "static":
+        response.headers["Cache-Control"] = (
+            "no-store, no-cache, must-revalidate, "
+            "max-age=0"
+        )
+
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+
+    return response
+
+
+# ==================================================
+# CONFIGURACIÓN DEL CORREO
+# ==================================================
+
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 587
 app.config["MAIL_USE_TLS"] = True
 
-app.config["MAIL_USERNAME"] = (
-    os.environ.get("MAIL_USERNAME")
+app.config["MAIL_USERNAME"] = os.environ.get(
+    "MAIL_USERNAME"
 )
 
-app.config["MAIL_PASSWORD"] = (
-    os.environ.get("MAIL_PASSWORD")
+app.config["MAIL_PASSWORD"] = os.environ.get(
+    "MAIL_PASSWORD"
 )
 
 mail = Mail(app)
 
 
-# =========================
+# ==================================================
 # POSTGRESQL / SUPABASE
-# =========================
+# ==================================================
+
 def get_db():
     """
-    Conexión con PostgreSQL de Supabase.
+    Crea una conexión con PostgreSQL de Supabase.
     """
     return psycopg.connect(
         host=variable_obligatoria(
@@ -102,12 +134,12 @@ def get_db():
         port=int(
             os.environ.get(
                 "DB_PORT",
-                "5432"
+                "5432",
             )
         ),
         dbname=os.environ.get(
             "DB_NAME",
-            "postgres"
+            "postgres",
         ),
         user=variable_obligatoria(
             "DB_USER"
@@ -121,17 +153,18 @@ def get_db():
     )
 
 
-# =========================
-# UPLOADS
-# =========================
+# ==================================================
+# ARCHIVOS DE EVIDENCIA
+# ==================================================
+
 UPLOAD_FOLDER = os.path.join(
     app.root_path,
-    "uploads"
+    "uploads",
 )
 
 os.makedirs(
     UPLOAD_FOLDER,
-    exist_ok=True
+    exist_ok=True,
 )
 
 app.config["UPLOAD_FOLDER"] = (
@@ -149,15 +182,22 @@ EXTENSIONES_PERMITIDAS = {
 
 def archivo_permitido(nombre_archivo):
     """
-    Comprueba que la extensión esté permitida.
+    Comprueba que el archivo tenga una extensión
+    permitida.
     """
-    return (
-        "." in nombre_archivo
-        and nombre_archivo
+    if not nombre_archivo:
+        return False
+
+    if "." not in nombre_archivo:
+        return False
+
+    extension = (
+        nombre_archivo
         .rsplit(".", 1)[1]
         .lower()
-        in EXTENSIONES_PERMITIDAS
     )
+
+    return extension in EXTENSIONES_PERMITIDAS
 
 
 @app.route(
@@ -165,10 +205,10 @@ def archivo_permitido(nombre_archivo):
 )
 def mostrar_archivo(nombre_archivo):
     """
-    Muestra una evidencia únicamente si pertenece
+    Muestra una evidencia únicamente cuando pertenece
     al usuario que inició sesión.
     """
-    if "user_id" not in session:
+    if not usuario_autenticado():
         return redirect("/")
 
     try:
@@ -188,9 +228,7 @@ def mostrar_archivo(nombre_archivo):
                     ),
                 )
 
-                evidencia = (
-                    cursor.fetchone()
-                )
+                evidencia = cursor.fetchone()
 
     except Exception:
         app.logger.exception(
@@ -198,8 +236,7 @@ def mostrar_archivo(nombre_archivo):
         )
 
         return (
-            "No se pudo consultar "
-            "la evidencia",
+            "No se pudo consultar la evidencia",
             500,
         )
 
@@ -212,12 +249,13 @@ def mostrar_archivo(nombre_archivo):
     )
 
 
-# =========================
-# LOGIN
-# =========================
+# ==================================================
+# INICIO DE SESIÓN
+# ==================================================
+
 @app.route("/")
 def login():
-    if "user_id" in session:
+    if usuario_autenticado():
         return redirect("/compras")
 
     return render_template(
@@ -227,20 +265,13 @@ def login():
 
 @app.route(
     "/validar",
-    methods=["POST"]
+    methods=["POST"],
 )
 def validar():
     """
-    Permite iniciar sesión con correo
-    o con nombre de usuario.
-
-    También acepta distintos nombres
-    del campo HTML:
-    - email
-    - correo
-    - usuario
+    Permite iniciar sesión con correo electrónico
+    o nombre de usuario.
     """
-
     acceso = (
         request.form.get("email")
         or request.form.get("correo")
@@ -250,13 +281,12 @@ def validar():
 
     password = request.form.get(
         "password",
-        ""
+        "",
     )
 
     if not acceso or not password:
         return (
-            "Debes escribir correo "
-            "y contraseña",
+            "Debes escribir correo y contraseña",
             400,
         )
 
@@ -289,8 +319,7 @@ def validar():
         )
 
         return (
-            "No se pudo conectar con "
-            "la base de datos",
+            "No se pudo conectar con la base de datos",
             500,
         )
 
@@ -304,9 +333,7 @@ def validar():
         session.clear()
 
         session["user_id"] = user["id"]
-        session["usuario"] = (
-            user["usuario"]
-        )
+        session["usuario"] = user["usuario"]
 
         return redirect("/compras")
 
@@ -316,9 +343,10 @@ def validar():
     )
 
 
-# =========================
-# LOGOUT
-# =========================
+# ==================================================
+# CERRAR SESIÓN
+# ==================================================
+
 @app.route("/salir")
 def salir():
     session.clear()
@@ -326,12 +354,13 @@ def salir():
     return redirect("/")
 
 
-# =========================
-# COMPRAS
-# =========================
+# ==================================================
+# FORMULARIO DE NUEVA COMPRA
+# ==================================================
+
 @app.route("/compras")
 def compras():
-    if "user_id" not in session:
+    if not usuario_autenticado():
         return redirect("/")
 
     return render_template(
@@ -339,30 +368,36 @@ def compras():
     )
 
 
-# =========================
+# ==================================================
 # GUARDAR COMPRA
-# =========================
+# ==================================================
+
 @app.route(
     "/guardar",
-    methods=["POST"]
+    methods=["POST"],
 )
 def guardar():
-    if "user_id" not in session:
+    if not usuario_autenticado():
         return redirect("/")
 
     producto = request.form.get(
         "producto",
-        ""
+        "",
     ).strip()
 
     proveedor = request.form.get(
         "proveedor",
-        ""
+        "",
     ).strip()
 
     monto_texto = request.form.get(
         "monto",
-        ""
+        "",
+    ).strip()
+
+    fecha_texto = request.form.get(
+        "fecha",
+        "",
     ).strip()
 
     if (
@@ -375,16 +410,21 @@ def guardar():
             400,
         )
 
+    # Convertir monto
     try:
         monto = Decimal(
             monto_texto.replace(
                 ",",
-                "."
+                ".",
             )
         )
 
         if not monto.is_finite():
             raise InvalidOperation
+
+        monto = monto.quantize(
+            Decimal("0.01")
+        )
 
     except InvalidOperation:
         return (
@@ -394,10 +434,26 @@ def guardar():
 
     if monto < 0:
         return (
-            "El monto no puede "
-            "ser negativo",
+            "El monto no puede ser negativo",
             400,
         )
+
+    # Obtener fecha del formulario o usar hoy
+    if fecha_texto:
+        try:
+            fecha = datetime.strptime(
+                fecha_texto,
+                "%Y-%m-%d",
+            ).date()
+
+        except ValueError:
+            return (
+                "La fecha no es válida",
+                400,
+            )
+
+    else:
+        fecha = datetime.now().date()
 
     archivo = request.files.get(
         "foto"
@@ -408,8 +464,7 @@ def guardar():
         or not archivo.filename
     ):
         return (
-            "Debes seleccionar "
-            "una evidencia",
+            "Debes seleccionar una evidencia",
             400,
         )
 
@@ -428,8 +483,7 @@ def guardar():
 
     if not nombre_seguro:
         return (
-            "El nombre del archivo "
-            "no es válido",
+            "El nombre del archivo no es válido",
             400,
         )
 
@@ -443,11 +497,20 @@ def guardar():
         nombre_unico,
     )
 
-    archivo.save(
-        ruta_archivo
-    )
+    try:
+        archivo.save(
+            ruta_archivo
+        )
 
-    fecha = datetime.now().date()
+    except Exception:
+        app.logger.exception(
+            "Error guardando evidencia"
+        )
+
+        return (
+            "No se pudo guardar la evidencia",
+            500,
+        )
 
     try:
         with get_db() as db:
@@ -496,8 +559,7 @@ def guardar():
             )
 
         return (
-            "No se pudo guardar "
-            "la compra",
+            "No se pudo guardar la compra",
             500,
         )
 
@@ -506,24 +568,57 @@ def guardar():
     )
 
 
-# =========================
+# ==================================================
 # HISTORIAL
-# =========================
+# ==================================================
+
 @app.route("/historial")
 def historial():
-    if "user_id" not in session:
+    """
+    Organiza las compras de la siguiente manera:
+
+    Todas las compras
+        Mes
+            Día
+                Compras
+    """
+    if not usuario_autenticado():
         return redirect("/")
+
+    nombres_meses = {
+        1: "Enero",
+        2: "Febrero",
+        3: "Marzo",
+        4: "Abril",
+        5: "Mayo",
+        6: "Junio",
+        7: "Julio",
+        8: "Agosto",
+        9: "Septiembre",
+        10: "Octubre",
+        11: "Noviembre",
+        12: "Diciembre",
+    }
 
     try:
         with get_db() as db:
             with db.cursor() as cursor:
+                # Obtener todas las compras activas
                 cursor.execute(
                     """
-                    SELECT *
+                    SELECT
+                        id,
+                        producto,
+                        proveedor,
+                        monto,
+                        fecha,
+                        evidencia,
+                        user_id,
+                        eliminado
                     FROM compras
                     WHERE user_id = %s
                       AND eliminado = FALSE
-                    ORDER BY id DESC
+                    ORDER BY fecha DESC, id DESC
                     """,
                     (
                         session["user_id"],
@@ -534,6 +629,7 @@ def historial():
                     cursor.fetchall()
                 )
 
+                # Obtener resumen general
                 cursor.execute(
                     """
                     SELECT
@@ -551,9 +647,7 @@ def historial():
                     ),
                 )
 
-                resumen = (
-                    cursor.fetchone()
-                )
+                resumen = cursor.fetchone()
 
     except Exception:
         app.logger.exception(
@@ -561,27 +655,105 @@ def historial():
         )
 
         return (
-            "No se pudo cargar "
-            "el historial",
+            "No se pudo cargar el historial",
             500,
+        )
+
+    # ==================================================
+    # AGRUPAR PRIMERO POR MES Y DESPUÉS POR DÍA
+    # ==================================================
+
+    grupos_meses = {}
+
+    for compra in lista_compras:
+        fecha = compra["fecha"]
+
+        clave_mes = fecha.strftime(
+            "%Y-%m"
+        )
+
+        clave_dia = fecha.isoformat()
+
+        monto = (
+            compra["monto"]
+            if compra["monto"] is not None
+            else Decimal("0.00")
+        )
+
+        # Crear carpeta del mes
+        if clave_mes not in grupos_meses:
+            grupos_meses[clave_mes] = {
+                "clave": clave_mes,
+                "nombre": (
+                    f"{nombres_meses[fecha.month]} "
+                    f"{fecha.year}"
+                ),
+                "cantidad": 0,
+                "total": Decimal("0.00"),
+                "dias": {},
+            }
+
+        mes = grupos_meses[
+            clave_mes
+        ]
+
+        mes["cantidad"] += 1
+        mes["total"] += monto
+
+        # Crear carpeta del día
+        if clave_dia not in mes["dias"]:
+            mes["dias"][clave_dia] = {
+                "clave": clave_dia,
+                "fecha": fecha,
+                "cantidad": 0,
+                "total": Decimal("0.00"),
+                "compras": [],
+            }
+
+        dia = mes["dias"][
+            clave_dia
+        ]
+
+        dia["cantidad"] += 1
+        dia["total"] += monto
+        dia["compras"].append(
+            compra
+        )
+
+    # Ordenar meses del más reciente al más antiguo
+    meses = sorted(
+        grupos_meses.values(),
+        key=lambda elemento: elemento["clave"],
+        reverse=True,
+    )
+
+    # Ordenar los días de cada mes
+    for mes in meses:
+        mes["dias"] = sorted(
+            mes["dias"].values(),
+            key=lambda elemento: elemento["clave"],
+            reverse=True,
         )
 
     return render_template(
         "historial.html",
         compras=lista_compras,
+        meses=meses,
         total_compras=resumen["total"],
         total_gasto=resumen["gasto"],
     )
 
 
-# =========================
-# ELIMINAR (PAPELERA)
-# =========================
+# ==================================================
+# ENVIAR COMPRA A PAPELERA
+# ==================================================
+
 @app.route(
-    "/eliminar/<int:id>"
+    "/eliminar/<int:id>",
+    methods=["GET", "POST"],
 )
 def eliminar(id):
-    if "user_id" not in session:
+    if not usuario_autenticado():
         return redirect("/")
 
     try:
@@ -602,13 +774,11 @@ def eliminar(id):
 
     except Exception:
         app.logger.exception(
-            "Error enviando compra "
-            "a papelera"
+            "Error enviando compra a papelera"
         )
 
         return (
-            "No se pudo eliminar "
-            "la compra",
+            "No se pudo eliminar la compra",
             500,
         )
 
@@ -617,12 +787,13 @@ def eliminar(id):
     )
 
 
-# =========================
+# ==================================================
 # PAPELERA
-# =========================
+# ==================================================
+
 @app.route("/papelera")
 def papelera():
-    if "user_id" not in session:
+    if not usuario_autenticado():
         return redirect("/")
 
     try:
@@ -630,11 +801,19 @@ def papelera():
             with db.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT *
+                    SELECT
+                        id,
+                        producto,
+                        proveedor,
+                        monto,
+                        fecha,
+                        evidencia,
+                        user_id,
+                        eliminado
                     FROM compras
                     WHERE user_id = %s
                       AND eliminado = TRUE
-                    ORDER BY id DESC
+                    ORDER BY fecha DESC, id DESC
                     """,
                     (
                         session["user_id"],
@@ -651,8 +830,7 @@ def papelera():
         )
 
         return (
-            "No se pudo cargar "
-            "la papelera",
+            "No se pudo cargar la papelera",
             500,
         )
 
@@ -662,14 +840,16 @@ def papelera():
     )
 
 
-# =========================
-# RESTAURAR
-# =========================
+# ==================================================
+# RESTAURAR COMPRA
+# ==================================================
+
 @app.route(
-    "/restaurar/<int:id>"
+    "/restaurar/<int:id>",
+    methods=["GET", "POST"],
 )
 def restaurar(id):
-    if "user_id" not in session:
+    if not usuario_autenticado():
         return redirect("/")
 
     try:
@@ -694,8 +874,7 @@ def restaurar(id):
         )
 
         return (
-            "No se pudo restaurar "
-            "la compra",
+            "No se pudo restaurar la compra",
             500,
         )
 
@@ -704,9 +883,98 @@ def restaurar(id):
     )
 
 
-# =========================
-# FORMULARIO REGISTRO
-# =========================
+# ==================================================
+# ELIMINAR COMPRA DEFINITIVAMENTE
+# ==================================================
+
+@app.route(
+    "/eliminar_definitivamente/<int:id>",
+    methods=["GET", "POST"],
+)
+def eliminar_definitivamente(id):
+    """
+    Elimina definitivamente una compra que se encuentra
+    en la papelera y también intenta eliminar su evidencia.
+    """
+    if not usuario_autenticado():
+        return redirect("/")
+
+    evidencia = None
+
+    try:
+        with get_db() as db:
+            with db.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT evidencia
+                    FROM compras
+                    WHERE id = %s
+                      AND user_id = %s
+                      AND eliminado = TRUE
+                    LIMIT 1
+                    """,
+                    (
+                        id,
+                        session["user_id"],
+                    ),
+                )
+
+                compra = cursor.fetchone()
+
+                if compra:
+                    evidencia = compra["evidencia"]
+
+                    cursor.execute(
+                        """
+                        DELETE FROM compras
+                        WHERE id = %s
+                          AND user_id = %s
+                          AND eliminado = TRUE
+                        """,
+                        (
+                            id,
+                            session["user_id"],
+                        ),
+                    )
+
+    except Exception:
+        app.logger.exception(
+            "Error eliminando compra definitivamente"
+        )
+
+        return (
+            "No se pudo eliminar la compra",
+            500,
+        )
+
+    if evidencia:
+        ruta_archivo = os.path.join(
+            app.config["UPLOAD_FOLDER"],
+            evidencia,
+        )
+
+        if os.path.exists(
+            ruta_archivo
+        ):
+            try:
+                os.remove(
+                    ruta_archivo
+                )
+
+            except OSError:
+                app.logger.exception(
+                    "No se pudo eliminar la evidencia"
+                )
+
+    return redirect(
+        "/papelera"
+    )
+
+
+# ==================================================
+# FORMULARIO DE REGISTRO
+# ==================================================
+
 @app.route("/registro")
 def registro():
     return render_template(
@@ -714,27 +982,28 @@ def registro():
     )
 
 
-# =========================
+# ==================================================
 # CREAR CUENTA
-# =========================
+# ==================================================
+
 @app.route(
     "/crear_cuenta",
-    methods=["POST"]
+    methods=["POST"],
 )
 def crear_cuenta():
     usuario = request.form.get(
         "usuario",
-        ""
+        "",
     ).strip()
 
     email = request.form.get(
         "email",
-        ""
+        "",
     ).strip().lower()
 
     password_raw = request.form.get(
         "password",
-        ""
+        "",
     )
 
     if (
@@ -742,12 +1011,28 @@ def crear_cuenta():
         or not email
         or not password_raw
     ):
-        return "Faltan datos", 400
+        return (
+            "Faltan datos",
+            400,
+        )
+
+    if "@" not in email:
+        return (
+            "El correo electrónico no es válido",
+            400,
+        )
+
+    if len(usuario) < 3:
+        return (
+            "El usuario debe tener al menos "
+            "3 caracteres",
+            400,
+        )
 
     if len(password_raw) < 8:
         return (
-            "La contraseña debe tener "
-            "al menos 8 caracteres",
+            "La contraseña debe tener al menos "
+            "8 caracteres",
             400,
         )
 
@@ -778,8 +1063,7 @@ def crear_cuenta():
 
                 if existe:
                     return (
-                        "El correo o usuario "
-                        "ya existe",
+                        "El correo o usuario ya existe",
                         409,
                     )
 
@@ -805,8 +1089,7 @@ def crear_cuenta():
 
     except UniqueViolation:
         return (
-            "El correo o usuario "
-            "ya existe",
+            "El correo o usuario ya existe",
             409,
         )
 
@@ -816,20 +1099,20 @@ def crear_cuenta():
         )
 
         return (
-            "No se pudo crear "
-            "la cuenta",
+            "No se pudo crear la cuenta",
             500,
         )
 
     return redirect("/")
 
 
-# =========================
+# ==================================================
 # RECUPERAR CONTRASEÑA
-# =========================
+# ==================================================
+
 @app.route(
     "/recuperar",
-    methods=["GET", "POST"]
+    methods=["GET", "POST"],
 )
 def recuperar():
     if request.method == "GET":
@@ -839,7 +1122,7 @@ def recuperar():
 
     email = request.form.get(
         "email",
-        ""
+        "",
     ).strip().lower()
 
     if not email:
@@ -856,6 +1139,7 @@ def recuperar():
                     SELECT id
                     FROM usuarios
                     WHERE LOWER(email) = %s
+                    LIMIT 1
                     """,
                     (email,),
                 )
@@ -868,19 +1152,14 @@ def recuperar():
         )
 
         return (
-            "No se pudo consultar "
-            "el correo",
+            "No se pudo consultar el correo",
             500,
         )
 
     if user:
         if (
-            not app.config[
-                "MAIL_USERNAME"
-            ]
-            or not app.config[
-                "MAIL_PASSWORD"
-            ]
+            not app.config["MAIL_USERNAME"]
+            or not app.config["MAIL_PASSWORD"]
         ):
             return (
                 "El servicio de correo "
@@ -917,9 +1196,9 @@ def recuperar():
         )
 
         mensaje.body = (
-            "Utiliza el siguiente enlace "
-            "para cambiar tu contraseña:"
-            f"\n\n{link}\n\n"
+            "Utiliza el siguiente enlace para "
+            "cambiar tu contraseña:\n\n"
+            f"{link}\n\n"
             "El enlace vence en una hora."
         )
 
@@ -934,24 +1213,23 @@ def recuperar():
             )
 
             return (
-                "No se pudo enviar "
-                "el correo",
+                "No se pudo enviar el correo",
                 500,
             )
 
     return (
         "Si el correo está registrado, "
-        "recibirás un enlace "
-        "de recuperación."
+        "recibirás un enlace de recuperación."
     )
 
 
-# =========================
+# ==================================================
 # RESTABLECER CONTRASEÑA
-# =========================
+# ==================================================
+
 @app.route(
     "/reset_password/<token>",
-    methods=["GET", "POST"]
+    methods=["GET", "POST"],
 )
 def reset_password(token):
     try:
@@ -987,6 +1265,7 @@ def reset_password(token):
         or request.form.get(
             "new_password"
         )
+        or ""
     )
 
     confirmar = (
@@ -996,19 +1275,19 @@ def reset_password(token):
         or request.form.get(
             "confirm_password"
         )
+        or ""
     )
 
     if not password_raw:
         return (
-            "Debes escribir "
-            "una contraseña",
+            "Debes escribir una contraseña",
             400,
         )
 
     if len(password_raw) < 8:
         return (
-            "La contraseña debe tener "
-            "al menos 8 caracteres",
+            "La contraseña debe tener al menos "
+            "8 caracteres",
             400,
         )
 
@@ -1017,8 +1296,7 @@ def reset_password(token):
         and password_raw != confirmar
     ):
         return (
-            "Las contraseñas "
-            "no coinciden",
+            "Las contraseñas no coinciden",
             400,
         )
 
@@ -1045,39 +1323,48 @@ def reset_password(token):
 
     except Exception:
         app.logger.exception(
-            "Error restableciendo "
-            "contraseña"
+            "Error restableciendo contraseña"
         )
 
         return (
-            "No se pudo cambiar "
-            "la contraseña",
+            "No se pudo cambiar la contraseña",
             500,
         )
+
+    session.clear()
 
     return redirect("/")
 
 
-# =========================
-# ARCHIVO DEMASIADO GRANDE
-# =========================
+# ==================================================
+# ERRORES
+# ==================================================
+
 @app.errorhandler(413)
 def archivo_demasiado_grande(_error):
     return (
-        "El archivo supera "
-        "el límite de 10 MB",
+        "El archivo supera el límite de 10 MB",
         413,
     )
 
 
-# =========================
-# RUN
-# =========================
+@app.errorhandler(404)
+def pagina_no_encontrada(_error):
+    return (
+        "La página o el archivo no existe",
+        404,
+    )
+
+
+# ==================================================
+# EJECUTAR APLICACIÓN
+# ==================================================
+
 if __name__ == "__main__":
     port = int(
         os.environ.get(
             "PORT",
-            "10000"
+            "10000",
         )
     )
 
