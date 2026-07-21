@@ -1,51 +1,51 @@
-const CACHE_NAME = "compras-cache-v1";
+self.addEventListener(
+    "install",
+    function () {
+        self.skipWaiting();
+    }
+);
 
-const urlsToCache = [
-  "/",
-  "/login",
-  "/compras",
-  "/historial",
-  "/static/manifest.json"
-];
+self.addEventListener(
+    "activate",
+    function (event) {
+        event.waitUntil(
+            (async function () {
+                const nombresCache =
+                    await caches.keys();
 
-// INSTALACIÓN
-self.addEventListener("install", event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(urlsToCache);
-    })
-  );
-});
+                await Promise.all(
+                    nombresCache.map(
+                        function (nombre) {
+                            return caches.delete(
+                                nombre
+                            );
+                        }
+                    )
+                );
 
-// ACTIVACIÓN
-self.addEventListener("activate", event => {
-  event.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(
-        keys.map(key => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      );
-    })
-  );
-});
+                await self.registration.unregister();
 
-// FETCH (ESTO ES LO IMPORTANTE)
-self.addEventListener("fetch", event => {
-  event.respondWith(
-    caches.match(event.request).then(response => {
-      // si existe en cache → lo devuelve
-      if (response) return response;
+                const ventanas =
+                    await self.clients.matchAll(
+                        {
+                            type: "window",
+                            includeUncontrolled: true
+                        }
+                    );
 
-      // si no → intenta red
-      return fetch(event.request).catch(() => {
-        // fallback opcional
-        if (event.request.destination === "document") {
-          return caches.match("/");
-        }
-      });
-    })
-  );
-});
+                ventanas.forEach(
+                    function (ventana) {
+                        ventana.navigate(
+                            ventana.url
+                        );
+                    }
+                );
+            })()
+        );
+    }
+);
+
+/*
+El service worker se desinstala y elimina
+las versiones antiguas guardadas.
+*/
