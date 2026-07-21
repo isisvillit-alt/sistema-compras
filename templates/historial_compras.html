@@ -57,28 +57,30 @@
             </a>
 
             <a
+                href="{{ url_for('papelera') }}"
+                class="trash-button"
+            >
+                <i class="fa-solid fa-trash"></i>
+                Papelera
+            </a>
+
+            <a
                 href="{{ url_for('compras') }}"
                 class="new-button"
             >
                 <i class="fa-solid fa-plus"></i>
-                Nueva compra
+                Nueva
             </a>
 
         </nav>
 
         <section class="card-box search-panel">
 
-            <h2>
-                <i class="fa-solid fa-filter"></i>
-                Filtrar resultados
-            </h2>
-
             <input
                 type="search"
                 id="localSearch"
                 class="form-control"
                 placeholder="Producto, proveedor o cliente..."
-                autocomplete="off"
             >
 
         </section>
@@ -87,10 +89,7 @@
 
         {% if compras %}
 
-            <section
-                class="purchase-grid"
-                id="purchaseGrid"
-            >
+            <section class="purchase-grid">
 
                 {% for compra in compras %}
 
@@ -132,7 +131,6 @@
                                         nombre_archivo=compra.evidencia
                                     ) }}"
                                     alt="Evidencia"
-                                    loading="lazy"
                                     onclick="abrirImagen(this.src)"
                                 >
 
@@ -165,8 +163,11 @@
                             </h2>
 
                             <p class="purchase-line">
+
                                 <i class="fa-solid fa-store"></i>
+
                                 {{ compra.proveedor }}
+
                             </p>
 
                             <p class="purchase-line client-line">
@@ -217,19 +218,27 @@
                                     Editar
                                 </a>
 
-                                <a
-                                    href="{{ url_for(
-                                        'eliminar',
+                                <form
+                                    action="{{ url_for(
+                                        'eliminar_compra',
                                         id=compra.id
                                     ) }}"
-                                    class="delete-button"
-                                    onclick="return confirm(
+                                    method="POST"
+                                    style="flex:1;"
+                                    onsubmit="return confirm(
                                         '¿Enviar esta compra a la papelera?'
                                     )"
                                 >
-                                    <i class="fa-solid fa-trash"></i>
-                                    Eliminar
-                                </a>
+
+                                    <button
+                                        type="submit"
+                                        class="delete-button w-100"
+                                    >
+                                        <i class="fa-solid fa-trash"></i>
+                                        Eliminar
+                                    </button>
+
+                                </form>
 
                             </div>
 
@@ -242,15 +251,11 @@
             </section>
 
             <section
-                id="noLocalResults"
+                id="noResults"
                 class="empty"
                 hidden
             >
-
-                <i class="fa-solid fa-magnifying-glass"></i>
-
                 <h2>No hay coincidencias</h2>
-
             </section>
 
         {% else %}
@@ -267,22 +272,12 @@
 
     </main>
 
-    <a
-        href="{{ url_for('compras') }}"
-        class="floating-button"
-    >
-        <i class="fa-solid fa-plus"></i>
-    </a>
-
     <div
         class="image-modal"
         id="imageModal"
         onclick="cerrarImagen()"
     >
-        <img
-            id="modalImage"
-            alt="Evidencia ampliada"
-        >
+        <img id="modalImage">
     </div>
 
     <script>
@@ -298,40 +293,36 @@
 
         const noResults =
             document.getElementById(
-                "noLocalResults"
+                "noResults"
             );
 
-        if (search) {
-            search.addEventListener(
-                "input",
-                function () {
-                    const value = this.value
-                        .toLowerCase()
-                        .trim();
+        search.addEventListener(
+            "input",
+            function () {
+                const texto = this.value
+                    .toLowerCase()
+                    .trim();
 
-                    let visibles = 0;
+                let visibles = 0;
 
-                    cards.forEach(
-                        function (card) {
-                            const coincide =
-                                card.dataset.search
-                                .includes(value);
+                cards.forEach(
+                    function (card) {
+                        const mostrar =
+                            card.dataset.search
+                            .includes(texto);
 
-                            card.hidden = !coincide;
+                        card.hidden = !mostrar;
 
-                            if (coincide) {
-                                visibles++;
-                            }
+                        if (mostrar) {
+                            visibles++;
                         }
-                    );
-
-                    if (noResults) {
-                        noResults.hidden =
-                            visibles !== 0;
                     }
-                }
-            );
-        }
+                );
+
+                noResults.hidden =
+                    visibles !== 0;
+            }
+        );
 
         function abrirImagen(src) {
             document.getElementById(

@@ -35,9 +35,7 @@
 
         <h1>{{ titulo_mes }}</h1>
 
-        <p>
-            Selecciona un día
-        </p>
+        <p>Selecciona un día</p>
 
     </header>
 
@@ -56,11 +54,19 @@
             </a>
 
             <a
+                href="{{ url_for('papelera') }}"
+                class="trash-button"
+            >
+                <i class="fa-solid fa-trash"></i>
+                Papelera
+            </a>
+
+            <a
                 href="{{ url_for('compras') }}"
                 class="new-button"
             >
                 <i class="fa-solid fa-plus"></i>
-                Nueva compra
+                Nueva
             </a>
 
         </nav>
@@ -89,12 +95,15 @@
                             <div>
 
                                 <span class="folder-title">
+
                                     {{ dia.fecha.strftime(
                                         "%d/%m/%Y"
                                     ) }}
+
                                 </span>
 
                                 <span class="folder-detail">
+
                                     {{ dia.cantidad }}
 
                                     {% if dia.cantidad == 1 %}
@@ -102,6 +111,7 @@
                                     {% else %}
                                         compras
                                     {% endif %}
+
                                 </span>
 
                             </div>
@@ -109,9 +119,11 @@
                         </div>
 
                         <span class="folder-total">
+
                             ${{ "%.2f"|format(
                                 dia.total|float
                             ) }}
+
                         </span>
 
                     </a>

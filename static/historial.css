@@ -17,8 +17,7 @@
 
 body {
     min-height: 100vh;
-    padding-bottom: 110px;
-
+    padding-bottom: 105px;
     background: var(--fondo);
     font-family: Arial, sans-serif;
 }
@@ -38,9 +37,10 @@ body {
 
     border-bottom-left-radius: 30px;
     border-bottom-right-radius: 30px;
+}
 
-    box-shadow:
-        0 4px 15px rgba(0, 0, 0, 0.15);
+.header-icon {
+    font-size: 48px;
 }
 
 .top-header h1 {
@@ -54,10 +54,6 @@ body {
     opacity: 0.9;
 }
 
-.header-icon {
-    font-size: 48px;
-}
-
 .page {
     width: min(
         920px,
@@ -69,24 +65,30 @@ body {
 
 .toolbar {
     display: flex;
-    gap: 10px;
+    gap: 9px;
     margin-bottom: 17px;
 }
 
 .toolbar a {
     flex: 1;
-    padding: 13px 8px;
+    padding: 13px 7px;
 
     border-radius: 16px;
 
     color: white;
     text-align: center;
     text-decoration: none;
+
+    font-size: 14px;
     font-weight: bold;
 }
 
 .back-button {
     background: var(--negro);
+}
+
+.trash-button {
+    background: #373b45;
 }
 
 .new-button {
@@ -108,10 +110,6 @@ body {
     color: inherit;
     text-align: center;
     text-decoration: none;
-}
-
-.purchase-summary:hover {
-    color: inherit;
 }
 
 .summary-circle {
@@ -154,12 +152,6 @@ body {
 
     color: var(--verde);
     font-size: 19px;
-    font-weight: bold;
-}
-
-.form-label {
-    color: var(--gris);
-    font-size: 14px;
     font-weight: bold;
 }
 
@@ -206,13 +198,6 @@ body {
 
     color: white;
     text-decoration: none;
-
-    box-shadow:
-        0 5px 17px rgba(0, 0, 0, 0.12);
-}
-
-.folder-link:hover {
-    color: white;
 }
 
 .folder-left {
@@ -338,10 +323,12 @@ body {
     margin-top: 16px;
 }
 
-.purchase-actions a {
+.purchase-actions a,
+.purchase-actions button {
     flex: 1;
     padding: 13px 8px;
 
+    border: none;
     border-radius: 14px;
 
     color: white;
@@ -359,6 +346,10 @@ body {
     background: var(--rojo);
 }
 
+.restore-button {
+    background: var(--verde-medio);
+}
+
 .empty {
     padding: 32px 18px;
 
@@ -367,9 +358,6 @@ body {
 
     color: var(--gris);
     text-align: center;
-
-    box-shadow:
-        0 5px 18px rgba(0, 0, 0, 0.08);
 }
 
 .empty i {
@@ -404,13 +392,6 @@ body {
     color: white;
     text-decoration: none;
     font-size: 35px;
-
-    box-shadow:
-        0 10px 28px rgba(0, 0, 0, 0.24);
-}
-
-.floating-button:hover {
-    color: white;
 }
 
 .image-modal {
@@ -439,16 +420,5 @@ body {
 
     .evidence-image {
         height: 300px;
-    }
-}
-
-@media (max-width: 390px) {
-    .folder-total {
-        padding: 9px;
-        font-size: 12px;
-    }
-
-    .folder-title {
-        font-size: 17px;
     }
 }

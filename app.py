@@ -59,10 +59,24 @@ def login_requerido(funcion):
     return envoltura
 
 
+def obtener_campo(*nombres):
+    """
+    Acepta nombres de formularios nuevos y antiguos.
+    """
+
+    for nombre in nombres:
+        valor = request.form.get(nombre)
+
+        if valor is not None:
+            return str(valor).strip()
+
+    return ""
+
+
 def convertir_monto(texto):
     try:
         monto = Decimal(
-            texto.strip().replace(",", ".")
+            texto.replace(",", ".")
         )
 
         if not monto.is_finite():
@@ -75,10 +89,10 @@ def convertir_monto(texto):
     except (
         InvalidOperation,
         AttributeError,
-    ):
+    ) as error:
         raise ValueError(
             "El monto no es válido"
-        )
+        ) from error
 
     if monto < 0:
         raise ValueError(
@@ -98,13 +112,13 @@ def convertir_fecha(texto):
     except (
         TypeError,
         ValueError,
-    ):
+    ) as error:
         raise ValueError(
             "La fecha no es válida"
-        )
+        ) from error
 
 
-def obtener_limites_mes(clave_mes):
+def limites_del_mes(clave_mes):
     try:
         inicio = datetime.strptime(
             clave_mes,
@@ -129,7 +143,7 @@ def obtener_limites_mes(clave_mes):
 
 
 def nombre_mes(numero):
-    meses = {
+    nombres = {
         1: "Enero",
         2: "Febrero",
         3: "Marzo",
@@ -144,11 +158,11 @@ def nombre_mes(numero):
         12: "Diciembre",
     }
 
-    return meses[numero]
+    return nombres[numero]
 
 
 # ==================================================
-# APP
+# CONFIGURACIÓN DE FLASK
 # ==================================================
 
 app = Flask(__name__)
@@ -161,7 +175,7 @@ app.config["SESSION_COOKIE_SECURE"] = True
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
-# Máximo 10 MB
+# Máximo 10 MB por evidencia
 app.config["MAX_CONTENT_LENGTH"] = (
     10 * 1024 * 1024
 )
@@ -173,16 +187,17 @@ serializer = URLSafeTimedSerializer(
 
 @app.after_request
 def evitar_cache(response):
+    """
+    Evita que Safari muestre formularios anteriores.
+    """
+
     if request.endpoint != "static":
         response.headers["Cache-Control"] = (
-            "no-store, no-cache, "
-            "must-revalidate, max-age=0"
+            "no-store, no-cache, must-revalidate, "
+            "max-age=0"
         )
 
-        response.headers["Pragma"] = (
-            "no-cache"
-        )
-
+        response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
 
     return response
@@ -278,10 +293,7 @@ def archivo_permitido(nombre_archivo):
         .lower()
     )
 
-    return (
-        extension
-        in EXTENSIONES_PERMITIDAS
-    )
+    return extension in EXTENSIONES_PERMITIDAS
 
 
 def guardar_evidencia(archivo):
@@ -297,8 +309,8 @@ def guardar_evidencia(archivo):
         archivo.filename
     ):
         raise ValueError(
-            "Solo se permiten archivos "
-            "JPG, JPEG, PNG, WEBP o PDF"
+            "Solo se permiten archivos JPG, JPEG, "
+            "PNG, WEBP o PDF"
         )
 
     nombre_seguro = secure_filename(
@@ -307,8 +319,7 @@ def guardar_evidencia(archivo):
 
     if not nombre_seguro:
         raise ValueError(
-            "El nombre del archivo "
-            "no es válido"
+            "El nombre del archivo no es válido"
         )
 
     nombre_unico = (
@@ -325,10 +336,7 @@ def guardar_evidencia(archivo):
         ruta_archivo
     )
 
-    return (
-        nombre_unico,
-        ruta_archivo,
-    )
+    return nombre_unico, ruta_archivo
 
 
 def borrar_evidencia(nombre_archivo):
@@ -340,9 +348,7 @@ def borrar_evidencia(nombre_archivo):
         nombre_archivo,
     )
 
-    if os.path.exists(
-        ruta_archivo
-    ):
+    if os.path.exists(ruta_archivo):
         try:
             os.remove(
                 ruta_archivo
@@ -350,8 +356,7 @@ def borrar_evidencia(nombre_archivo):
 
         except OSError:
             app.logger.exception(
-                "No se pudo borrar "
-                "la evidencia"
+                "No se pudo borrar la evidencia"
             )
 
 
@@ -385,8 +390,7 @@ def mostrar_archivo(nombre_archivo):
         )
 
         return (
-            "No se pudo consultar "
-            "la evidencia",
+            "No se pudo consultar la evidencia",
             500,
         )
 
@@ -401,11 +405,22 @@ def mostrar_archivo(nombre_archivo):
 
 @app.route("/service-worker.js")
 def service_worker():
-    return send_from_directory(
+    response = send_from_directory(
         app.static_folder,
         "service-worker.js",
         mimetype="application/javascript",
     )
+
+    response.headers["Cache-Control"] = (
+        "no-store, no-cache, must-revalidate, "
+        "max-age=0"
+    )
+
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    response.headers["Service-Worker-Allowed"] = "/"
+
+    return response
 
 
 # ==================================================
@@ -443,8 +458,7 @@ def validar():
 
     if not acceso or not password:
         return (
-            "Debes escribir correo "
-            "y contraseña",
+            "Debes escribir correo y contraseña",
             400,
         )
 
@@ -477,8 +491,7 @@ def validar():
         )
 
         return (
-            "No se pudo conectar con "
-            "la base de datos",
+            "No se pudo conectar con la base de datos",
             500,
         )
 
@@ -519,7 +532,7 @@ def salir():
 
 
 # ==================================================
-# FORMULARIO DE COMPRA
+# REGISTRAR COMPRA
 # ==================================================
 
 @app.route("/compras")
@@ -535,44 +548,48 @@ def compras():
     )
 
 
-# ==================================================
-# GUARDAR COMPRA
-# ==================================================
-
 @app.route(
     "/guardar",
     methods=["POST"],
 )
 @login_requerido
 def guardar():
-    producto = request.form.get(
+    producto = obtener_campo(
         "producto",
-        "",
-    ).strip()
+        "product",
+        "nombre_producto",
+    )
 
-    proveedor = request.form.get(
+    proveedor = obtener_campo(
         "proveedor",
-        "",
-    ).strip()
+        "provider",
+    )
 
-    cliente = request.form.get(
+    cliente = obtener_campo(
         "cliente",
-        "",
-    ).strip()
+        "client",
+        "nombre_cliente",
+    )
 
-    monto_texto = request.form.get(
+    monto_texto = obtener_campo(
         "monto",
-        "",
-    ).strip()
+        "amount",
+    )
 
-    fecha_texto = request.form.get(
+    fecha_texto = obtener_campo(
         "fecha",
-        "",
-    ).strip()
+        "date",
+    )
 
     if not producto:
+        app.logger.warning(
+            "Formulario sin producto. Campos: %s",
+            list(request.form.keys()),
+        )
+
         return (
-            "Debes escribir el producto",
+            "No se recibió el producto. "
+            "Cierra y vuelve a abrir la aplicación.",
             400,
         )
 
@@ -596,6 +613,7 @@ def guardar():
             ruta_evidencia,
         ) = guardar_evidencia(
             request.files.get("foto")
+            or request.files.get("evidencia")
         )
 
     except ValueError as error:
@@ -607,8 +625,7 @@ def guardar():
         )
 
         return (
-            "No se pudo guardar "
-            "la evidencia",
+            "No se pudo guardar la evidencia",
             500,
         )
 
@@ -704,8 +721,7 @@ def historial():
         )
 
         return (
-            "No se pudo cargar "
-            "el historial",
+            "No se pudo cargar el historial",
             500,
         )
 
@@ -728,13 +744,11 @@ def historial_meses():
                 cursor.execute(
                     """
                     SELECT
-                        EXTRACT(
-                            YEAR FROM fecha
-                        )::INTEGER AS anio,
+                        EXTRACT(YEAR FROM fecha)::INTEGER
+                            AS anio,
 
-                        EXTRACT(
-                            MONTH FROM fecha
-                        )::INTEGER AS mes,
+                        EXTRACT(MONTH FROM fecha)::INTEGER
+                            AS mes,
 
                         COUNT(*) AS cantidad,
 
@@ -769,8 +783,7 @@ def historial_meses():
         )
 
         return (
-            "No se pudieron cargar "
-            "los meses",
+            "No se pudieron cargar los meses",
             500,
         )
 
@@ -787,9 +800,7 @@ def historial_meses():
                     f"{nombre_mes(resultado['mes'])} "
                     f"{resultado['anio']}"
                 ),
-                "cantidad": (
-                    resultado["cantidad"]
-                ),
+                "cantidad": resultado["cantidad"],
                 "total": resultado["total"],
             }
         )
@@ -809,7 +820,7 @@ def historial_meses():
 )
 @login_requerido
 def historial_mes(clave_mes):
-    inicio, fin = obtener_limites_mes(
+    inicio, fin = limites_del_mes(
         clave_mes
     )
 
@@ -857,8 +868,7 @@ def historial_mes(clave_mes):
         )
 
         return (
-            "No se pudieron cargar "
-            "los días",
+            "No se pudieron cargar los días",
             500,
         )
 
@@ -924,8 +934,7 @@ def historial_dia(fecha):
         )
 
         return (
-            "No se pudieron cargar "
-            "las compras",
+            "No se pudieron cargar las compras",
             500,
         )
 
@@ -946,7 +955,7 @@ def historial_dia(fecha):
 
 
 # ==================================================
-# BUSCAR COMPRAS
+# BÚSQUEDA
 # ==================================================
 
 @app.route("/historial/buscar")
@@ -1048,8 +1057,7 @@ def historial_buscar():
         )
 
         return (
-            "No se pudo realizar "
-            "la búsqueda",
+            "No se pudo realizar la búsqueda",
             500,
         )
 
@@ -1058,7 +1066,7 @@ def historial_buscar():
         compras=lista_compras,
         titulo="Resultados",
         subtitulo=(
-            "Resultados de la búsqueda"
+            "Producto, proveedor, cliente o fecha"
         ),
         volver_url=url_for(
             "historial"
@@ -1112,8 +1120,7 @@ def editar_compra(id):
         )
 
         return (
-            "No se pudo consultar "
-            "la compra",
+            "No se pudo consultar la compra",
             500,
         )
 
@@ -1126,34 +1133,42 @@ def editar_compra(id):
             compra=compra,
         )
 
-    producto = request.form.get(
+    producto = obtener_campo(
         "producto",
-        "",
-    ).strip()
+        "product",
+        "nombre_producto",
+    )
 
-    proveedor = request.form.get(
+    proveedor = obtener_campo(
         "proveedor",
-        "",
-    ).strip()
+        "provider",
+    )
 
-    cliente = request.form.get(
+    cliente = obtener_campo(
         "cliente",
-        "",
-    ).strip()
+        "client",
+        "nombre_cliente",
+    )
 
-    monto_texto = request.form.get(
+    monto_texto = obtener_campo(
         "monto",
-        "",
-    ).strip()
+        "amount",
+    )
 
-    fecha_texto = request.form.get(
+    fecha_texto = obtener_campo(
         "fecha",
-        "",
-    ).strip()
+        "date",
+    )
 
     if not producto:
+        app.logger.warning(
+            "Edición sin producto. Campos: %s",
+            list(request.form.keys()),
+        )
+
         return (
-            "Debes escribir el producto",
+            "No se recibió el producto. "
+            "Cierra y vuelve a abrir la aplicación.",
             400,
         )
 
@@ -1175,8 +1190,9 @@ def editar_compra(id):
     except ValueError as error:
         return str(error), 400
 
-    archivo_nuevo = request.files.get(
-        "foto"
+    archivo_nuevo = (
+        request.files.get("foto")
+        or request.files.get("evidencia")
     )
 
     evidencia_nueva = (
@@ -1202,13 +1218,11 @@ def editar_compra(id):
 
         except Exception:
             app.logger.exception(
-                "Error guardando "
-                "evidencia nueva"
+                "Error guardando evidencia nueva"
             )
 
             return (
-                "No se pudo guardar "
-                "la evidencia",
+                "No se pudo guardar la evidencia",
                 500,
             )
 
@@ -1257,8 +1271,7 @@ def editar_compra(id):
             )
 
         return (
-            "No se pudo actualizar "
-            "la compra",
+            "No se pudo actualizar la compra",
             500,
         )
 
@@ -1285,10 +1298,10 @@ def editar_compra(id):
 
 @app.route(
     "/eliminar/<int:id>",
-    methods=["GET", "POST"],
+    methods=["POST"],
 )
 @login_requerido
-def eliminar(id):
+def eliminar_compra(id):
     try:
         with get_db() as db:
             with db.cursor() as cursor:
@@ -1308,13 +1321,11 @@ def eliminar(id):
 
     except Exception:
         app.logger.exception(
-            "Error enviando compra "
-            "a papelera"
+            "Error enviando compra a papelera"
         )
 
         return (
-            "No se pudo eliminar "
-            "la compra",
+            "No se pudo eliminar la compra",
             500,
         )
 
@@ -1331,7 +1342,15 @@ def papelera():
             with db.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT *
+                    SELECT
+                        id,
+                        producto,
+                        proveedor,
+                        cliente,
+                        monto,
+                        fecha,
+                        evidencia
+
                     FROM compras
 
                     WHERE user_id = %s
@@ -1354,8 +1373,7 @@ def papelera():
         )
 
         return (
-            "No se pudo cargar "
-            "la papelera",
+            "No se pudo cargar la papelera",
             500,
         )
 
@@ -1367,10 +1385,10 @@ def papelera():
 
 @app.route(
     "/restaurar/<int:id>",
-    methods=["GET", "POST"],
+    methods=["POST"],
 )
 @login_requerido
-def restaurar(id):
+def restaurar_compra(id):
     try:
         with get_db() as db:
             with db.cursor() as cursor:
@@ -1394,8 +1412,7 @@ def restaurar(id):
         )
 
         return (
-            "No se pudo restaurar "
-            "la compra",
+            "No se pudo restaurar la compra",
             500,
         )
 
@@ -1406,7 +1423,7 @@ def restaurar(id):
 
 @app.route(
     "/eliminar_definitivamente/<int:id>",
-    methods=["GET", "POST"],
+    methods=["POST"],
 )
 @login_requerido
 def eliminar_definitivamente(id):
@@ -1455,13 +1472,11 @@ def eliminar_definitivamente(id):
 
     except Exception:
         app.logger.exception(
-            "Error eliminando compra "
-            "definitivamente"
+            "Error eliminando compra definitivamente"
         )
 
         return (
-            "No se pudo eliminar "
-            "la compra",
+            "No se pudo eliminar la compra",
             500,
         )
 
@@ -1520,22 +1535,20 @@ def crear_cuenta():
 
     if len(usuario) < 3:
         return (
-            "El usuario debe tener "
-            "al menos 3 caracteres",
+            "El usuario debe tener al menos "
+            "3 caracteres",
             400,
         )
 
     if len(password_raw) < 8:
         return (
-            "La contraseña debe tener "
-            "al menos 8 caracteres",
+            "La contraseña debe tener al menos "
+            "8 caracteres",
             400,
         )
 
-    password_hash = (
-        generate_password_hash(
-            password_raw
-        )
+    password_hash = generate_password_hash(
+        password_raw
     )
 
     try:
@@ -1561,8 +1574,7 @@ def crear_cuenta():
 
                 if existe:
                     return (
-                        "El correo o usuario "
-                        "ya existe",
+                        "El correo o usuario ya existe",
                         409,
                     )
 
@@ -1588,8 +1600,7 @@ def crear_cuenta():
 
     except UniqueViolation:
         return (
-            "El correo o usuario "
-            "ya existe",
+            "El correo o usuario ya existe",
             409,
         )
 
@@ -1599,8 +1610,7 @@ def crear_cuenta():
         )
 
         return (
-            "No se pudo crear "
-            "la cuenta",
+            "No se pudo crear la cuenta",
             500,
         )
 
@@ -1657,19 +1667,14 @@ def recuperar():
         )
 
         return (
-            "No se pudo consultar "
-            "el correo",
+            "No se pudo consultar el correo",
             500,
         )
 
     if usuario:
         if (
-            not app.config[
-                "MAIL_USERNAME"
-            ]
-            or not app.config[
-                "MAIL_PASSWORD"
-            ]
+            not app.config["MAIL_USERNAME"]
+            or not app.config["MAIL_PASSWORD"]
         ):
             return (
                 "El servicio de correo "
@@ -1706,9 +1711,9 @@ def recuperar():
         )
 
         mensaje.body = (
-            "Utiliza el siguiente enlace "
-            "para cambiar tu contraseña:"
-            f"\n\n{enlace}\n\n"
+            "Utiliza el siguiente enlace para "
+            "cambiar tu contraseña:\n\n"
+            f"{enlace}\n\n"
             "El enlace vence en una hora."
         )
 
@@ -1723,15 +1728,13 @@ def recuperar():
             )
 
             return (
-                "No se pudo enviar "
-                "el correo",
+                "No se pudo enviar el correo",
                 500,
             )
 
     return (
         "Si el correo está registrado, "
-        "recibirás un enlace "
-        "de recuperación."
+        "recibirás un enlace de recuperación."
     )
 
 
@@ -1788,8 +1791,8 @@ def reset_password(token):
 
     if len(password_raw) < 8:
         return (
-            "La contraseña debe tener "
-            "al menos 8 caracteres",
+            "La contraseña debe tener al menos "
+            "8 caracteres",
             400,
         )
 
@@ -1798,15 +1801,12 @@ def reset_password(token):
         and password_raw != confirmar
     ):
         return (
-            "Las contraseñas "
-            "no coinciden",
+            "Las contraseñas no coinciden",
             400,
         )
 
-    password_hash = (
-        generate_password_hash(
-            password_raw
-        )
+    password_hash = generate_password_hash(
+        password_raw
     )
 
     try:
@@ -1831,8 +1831,7 @@ def reset_password(token):
         )
 
         return (
-            "No se pudo cambiar "
-            "la contraseña",
+            "No se pudo cambiar la contraseña",
             500,
         )
 
@@ -1850,8 +1849,7 @@ def reset_password(token):
 @app.errorhandler(413)
 def archivo_grande(_error):
     return (
-        "El archivo supera "
-        "el límite de 10 MB",
+        "El archivo supera el límite de 10 MB",
         413,
     )
 
@@ -1859,8 +1857,7 @@ def archivo_grande(_error):
 @app.errorhandler(404)
 def no_encontrado(_error):
     return (
-        "La página o el archivo "
-        "no existe",
+        "La página o el archivo no existe",
         404,
     )
 

@@ -47,14 +47,14 @@
                 0 10px 25px rgba(0, 0, 0, 0.08);
         }
 
-        .form-control {
-            padding: 13px;
-            border-radius: 12px;
-        }
-
         .form-label {
             color: #1a523c;
             font-weight: bold;
+        }
+
+        .form-control {
+            padding: 13px;
+            border-radius: 12px;
         }
 
         .save-button {
@@ -71,7 +71,6 @@
 
         .current-evidence {
             overflow: hidden;
-
             border-radius: 16px;
             background: #eef4f1;
         }
@@ -81,15 +80,6 @@
             max-height: 280px;
             object-fit: cover;
         }
-
-        .current-evidence a {
-            display: block;
-            padding: 16px;
-
-            color: #1a523c;
-            text-align: center;
-            font-weight: bold;
-        }
     </style>
 </head>
 
@@ -98,10 +88,8 @@
     <nav class="navbar navbar-dark px-3 py-3">
 
         <span class="navbar-brand fw-bold">
-
             <i class="bi bi-pencil-square"></i>
             Editar compra
-
         </span>
 
         <a
@@ -125,22 +113,29 @@
         <section class="card edit-card p-4">
 
             <form
+                action="{{ url_for(
+                    'editar_compra',
+                    id=compra.id
+                ) }}"
                 method="POST"
                 enctype="multipart/form-data"
             >
 
                 <div class="mb-3">
 
-                    <label class="form-label">
+                    <label
+                        for="producto"
+                        class="form-label"
+                    >
                         Producto
                     </label>
 
                     <input
+                        id="producto"
                         type="text"
                         name="producto"
                         class="form-control"
                         value="{{ compra.producto }}"
-                        maxlength="255"
                         required
                     >
 
@@ -148,16 +143,19 @@
 
                 <div class="mb-3">
 
-                    <label class="form-label">
+                    <label
+                        for="proveedor"
+                        class="form-label"
+                    >
                         Proveedor
                     </label>
 
                     <input
+                        id="proveedor"
                         type="text"
                         name="proveedor"
                         class="form-control"
                         value="{{ compra.proveedor }}"
-                        maxlength="255"
                         required
                     >
 
@@ -165,28 +163,35 @@
 
                 <div class="mb-3">
 
-                    <label class="form-label">
+                    <label
+                        for="cliente"
+                        class="form-label"
+                    >
                         Nombre del cliente
                     </label>
 
                     <input
+                        id="cliente"
                         type="text"
                         name="cliente"
                         class="form-control"
                         value="{{ compra.cliente or '' }}"
                         placeholder="Vacío significa compra propia"
-                        maxlength="255"
                     >
 
                 </div>
 
                 <div class="mb-3">
 
-                    <label class="form-label">
+                    <label
+                        for="monto"
+                        class="form-label"
+                    >
                         Monto
                     </label>
 
                     <input
+                        id="monto"
                         type="number"
                         name="monto"
                         class="form-control"
@@ -200,11 +205,15 @@
 
                 <div class="mb-3">
 
-                    <label class="form-label">
+                    <label
+                        for="fecha"
+                        class="form-label"
+                    >
                         Fecha
                     </label>
 
                     <input
+                        id="fecha"
                         type="date"
                         name="fecha"
                         class="form-control"
@@ -240,7 +249,6 @@
                                     'mostrar_archivo',
                                     nombre_archivo=compra.evidencia
                                 ) }}"
-                                alt="Evidencia actual"
                             >
 
                         {% else %}
@@ -251,8 +259,8 @@
                                     nombre_archivo=compra.evidencia
                                 ) }}"
                                 target="_blank"
+                                class="d-block p-3"
                             >
-                                <i class="bi bi-file-earmark-pdf"></i>
                                 Abrir PDF actual
                             </a>
 
@@ -264,15 +272,18 @@
 
                 <div class="mb-4">
 
-                    <label class="form-label">
+                    <label
+                        for="foto"
+                        class="form-label"
+                    >
                         Cambiar evidencia
-
                         <span class="text-muted fw-normal">
                             (opcional)
                         </span>
                     </label>
 
                     <input
+                        id="foto"
                         type="file"
                         name="foto"
                         class="form-control"

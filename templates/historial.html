@@ -55,12 +55,12 @@
                 class="new-button"
             >
                 <i class="fa-solid fa-plus"></i>
-                Nueva compra
+                Nueva
             </a>
 
             <a
                 href="{{ url_for('papelera') }}"
-                class="back-button"
+                class="trash-button"
             >
                 <i class="fa-solid fa-trash"></i>
                 Papelera
@@ -90,7 +90,7 @@
                 </div>
 
                 <div class="mt-2 text-success fw-bold">
-                    Abrir todas las carpetas
+                    Abrir carpetas de meses
                     <i class="fa-solid fa-chevron-right"></i>
                 </div>
 
@@ -114,16 +114,12 @@
 
                 <div class="mb-3">
 
-                    <label
-                        for="q"
-                        class="form-label"
-                    >
+                    <label>
                         Producto, proveedor o cliente
                     </label>
 
                     <input
                         type="search"
-                        id="q"
                         name="q"
                         class="form-control"
                         placeholder="Ej. Manzana, Julia..."
@@ -133,16 +129,12 @@
 
                 <div class="mb-3">
 
-                    <label
-                        for="fecha"
-                        class="form-label"
-                    >
+                    <label>
                         Día de la compra
                     </label>
 
                     <input
                         type="date"
-                        id="fecha"
                         name="fecha"
                         class="form-control"
                     >
@@ -162,13 +154,6 @@
         </section>
 
     </main>
-
-    <a
-        href="{{ url_for('compras') }}"
-        class="floating-button"
-    >
-        <i class="fa-solid fa-plus"></i>
-    </a>
 
 </body>
 </html>
