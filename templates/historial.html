@@ -2,614 +2,880 @@
 <html lang="es">
 
 <head>
+    <meta charset="UTF-8">
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
 
-<title>Historial</title>
+    <title>Historial</title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
 
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    >
 
-<style>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
+        body {
+            background: #edf2f7;
+            font-family: Arial, sans-serif;
+            padding-bottom: 140px;
+        }
 
-body{
-    background:#edf2f7;
-    font-family:Arial,sans-serif;
-    padding-bottom:140px;
-}
+        /* HEADER */
 
-/* HEADER */
+        .header {
+            background:
+                linear-gradient(
+                    135deg,
+                    #289167,
+                    #1a523c
+                );
 
-.header{
-    background:linear-gradient(135deg,#289167,#1a523c);
-    color:white;
-    padding:12px 10px 28px;
-    text-align:center;
-    border-bottom-left-radius:28px;
-    border-bottom-right-radius:28px;
-    box-shadow:0 3px 10px rgba(0,0,0,0.15);
-}
+            color: white;
+            padding: 12px 10px 70px;
+            text-align: center;
 
-.header h1{
-    font-size:24px;
-    font-weight:bold;
-    margin-top:2px;
-    margin-bottom:2px;
-}
+            border-bottom-left-radius: 28px;
+            border-bottom-right-radius: 28px;
 
-.header p{
-    font-size:13px;
-    opacity:0.9;
-    margin-top:5px;
-}
+            box-shadow:
+                0 3px 10px rgba(0, 0, 0, 0.15);
+        }
 
-/* RESUMEN */
+        .header-icon {
+            font-size: 55px;
+        }
 
-.summary-container{
-    margin-top:-40px;
-    padding:0 18px;
-}
+        .header h1 {
+            font-size: 32px;
+            font-weight: bold;
+            margin-top: 2px;
+            margin-bottom: 2px;
+        }
 
-.summary-card{
-    background:white;
-    border-radius:25px;
-    padding:20px 10px;
-    text-align:center;
-    box-shadow:0 5px 18px rgba(0,0,0,0.08);
-    height:220px;
-}
+        .header p {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
 
-.circle-icon{
-    width:75px;
-    height:75px;
-    border-radius:50%;
-    background:#1a523c;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    margin:auto;
-    margin-bottom:12px;
-    color:white;
-    font-size:32px;
-}
+        /* RESUMEN */
 
-.summary-title{
-    font-size:20px;
-    color:#666;
-    margin-bottom:10px;
-}
+        .summary-container {
+            margin-top: -42px;
+            padding: 0 14px;
+        }
 
-.summary-value{
-    font-size:30px;
-    font-weight:bold;
-    color:#1a523c;
-}
+        .summary-card {
+            background: white;
+            border-radius: 25px;
+            padding: 18px 10px;
+            text-align: center;
 
-/* BUSCADOR */
+            box-shadow:
+                0 5px 18px rgba(0, 0, 0, 0.08);
 
-.search-box{
-    margin:30px 20px 10px;
-}
+            min-height: 182px;
+        }
 
-.search-box input{
-    width:100%;
-    border:none;
-    border-radius:28px;
-    padding:24px;
-    font-size:22px;
-    box-shadow:0 5px 18px rgba(0,0,0,0.08);
-}
+        .circle-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #1a523c;
 
-/* BOTONES */
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
-.buttons{
-    display:flex;
-    gap:18px;
-    padding:20px;
-}
+            margin: auto;
+            margin-bottom: 12px;
 
-.btn-pro{
-    flex:1;
-    padding:20px;
-    border-radius:25px;
-    text-decoration:none;
-    color:white;
-    font-size:22px;
-    font-weight:bold;
-    text-align:center;
-    transition:0.3s;
-}
+            color: white;
+            font-size: 27px;
+        }
 
-.btn-trash{
-    background:#1b1d26;
-}
+        .summary-title {
+            font-size: 17px;
+            color: #666;
+            margin-bottom: 8px;
+        }
 
-.btn-new{
-    background:#257756;
-}
+        .summary-value {
+            font-size: 25px;
+            font-weight: bold;
+            color: #1a523c;
+        }
 
-.btn-pro:hover{
-    color:white;
-    transform:scale(1.02);
-}
+        /* BUSCADOR */
 
-/* DÍAS */
+        .search-box {
+            margin: 28px 15px 10px;
+        }
 
-.day-box{
-    margin:18px 20px;
-    border-radius:35px;
-    overflow:hidden;
-    background:linear-gradient(135deg,#1a523c,#1a523c);
-    box-shadow:0 5px 18px rgba(0,0,0,0.1);
-}
+        .search-box input {
+            width: 100%;
+            border: none;
+            outline: none;
 
-.day-header{
-    padding:35px 28px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    cursor:pointer;
-    color:white;
-    font-size:22px;
-    font-weight:bold;
-}
+            border-radius: 28px;
+            padding: 19px;
 
-.day-total{
-    background:white;
-    color:#1a523c;
-    padding:18px 25px;
-    border-radius:22px;
-    font-size:22px;
-    font-weight:bold;
-}
+            font-size: 17px;
 
-/* CONTENIDO */
+            box-shadow:
+                0 5px 18px rgba(0, 0, 0, 0.08);
+        }
 
-.day-content{
-    display:none;
-    background:#f7f9fb;
-    padding:20px;
-}
+        /* BOTONES SUPERIORES */
 
-/* TARJETAS */
+        .buttons {
+            display: flex;
+            gap: 14px;
+            padding: 15px;
+        }
 
-.card-pro{
-    background:white;
-    border-radius:25px;
-    overflow:hidden;
-    margin-bottom:20px;
-    box-shadow:0 4px 12px rgba(0,0,0,0.08);
-}
+        .btn-pro {
+            flex: 1;
+            padding: 17px 10px;
 
-.card-pro img{
-    width:100%;
-    height:260px;
-    object-fit:cover;
-}
+            border-radius: 22px;
 
-.info{
-    padding:20px;
-}
+            text-decoration: none;
+            color: white;
 
-.info h4{
-    font-size:28px;
-    font-weight:bold;
-    margin-bottom:8px;
-}
+            font-size: 17px;
+            font-weight: bold;
+            text-align: center;
 
-.info p{
-    color:#666;
-    font-size:18px;
-}
+            transition: 0.3s;
+        }
 
-.price{
-    font-size:35px;
-    color:#1a523c;
-    font-weight:bold;
-    margin-top:15px;
-}
+        .btn-trash {
+            background: #1b1d26;
+        }
 
-/* BOTONES CARD */
+        .btn-new {
+            background: #257756;
+        }
 
-.actions{
-    display:flex;
-    gap:12px;
-    margin-top:20px;
-}
+        .btn-pro:hover {
+            color: white;
+            transform: scale(1.02);
+        }
 
-.btn-action{
-    flex:1;
-    text-align:center;
-    padding:15px;
-    border-radius:16px;
-    text-decoration:none;
-    color:white;
-    font-weight:bold;
-    font-size:18px;
-}
+        /* DÍAS */
 
-.edit{
-    background:#21641f;
-}
+        .day-box {
+            margin: 18px 15px;
+            border-radius: 28px;
+            overflow: hidden;
 
-.delete{
-    background:#dc3545;
-}
+            background:
+                linear-gradient(
+                    135deg,
+                    #1a523c,
+                    #267858
+                );
 
-/* BOTÓN FLOTANTE */
+            box-shadow:
+                0 5px 18px rgba(0, 0, 0, 0.1);
+        }
 
-.btn-add{
-    position:fixed;
-    bottom:25px;
-    right:25px;
-    width:90px;
-    height:90px;
-    border-radius:50%;
-    background:linear-gradient(135deg,#1a523c,#2b8a64);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:white;
-    font-size:45px;
-    text-decoration:none;
-    box-shadow:0 10px 30px rgba(0,0,0,0.2);
-}
+        .day-header {
+            padding: 22px 18px;
 
-.btn-add:hover{
-    color:white;
-}
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
 
-/* MODAL */
+            cursor: pointer;
+            color: white;
 
-.modal-img{
-    display:none;
-    position:fixed;
-    z-index:9999;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background:rgba(0,0,0,0.8);
-    justify-content:center;
-    align-items:center;
-}
+            font-size: 17px;
+            font-weight: bold;
+        }
 
-.modal-img img{
-    max-width:90%;
-    max-height:90%;
-    border-radius:25px;
-}
+        .day-date {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-/* RESPONSIVE */
+        .day-total {
+            background: white;
+            color: #1a523c;
 
-@media(max-width:768px){
+            padding: 12px 15px;
+            border-radius: 18px;
 
-    .header h1{
-        font-size:32px;
-    }
+            font-size: 17px;
+            font-weight: bold;
+        }
 
-    .header p{
-        font-size:18px;
-    }
+        /* CONTENIDO DEL DÍA */
 
-    .summary-title{
-        font-size:18px;
-    }
+        .day-content {
+            display: none;
+            background: #f7f9fb;
+            padding: 15px;
+        }
 
-    .summary-value{
-        font-size:26px;
-    }
+        .day-search {
+            border: 1px solid #ddd;
+            border-radius: 16px;
+            padding: 13px;
+            margin-bottom: 15px;
+        }
 
-    .btn-pro{
-        font-size:18px;
-        padding:18px;
-    }
+        /* TARJETAS */
 
-    .day-header{
-        font-size:18px;
-        padding:25px 20px;
-    }
+        .card-pro {
+            background: white;
+            border-radius: 22px;
+            overflow: hidden;
+            margin-bottom: 18px;
 
-    .day-total{
-        font-size:18px;
-        padding:14px 18px;
-    }
+            box-shadow:
+                0 4px 12px rgba(0, 0, 0, 0.08);
+        }
 
-    .search-box input{
-        font-size:18px;
-        padding:20px;
-    }
+        .card-pro img {
+            width: 100%;
+            height: 230px;
+            object-fit: cover;
+            cursor: pointer;
+        }
 
-}
+        .archivo-pdf {
+            min-height: 150px;
 
-</style>
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
 
+            background: #e9f1ed;
+            color: #1a523c;
+
+            font-size: 45px;
+        }
+
+        .archivo-pdf a {
+            margin-top: 12px;
+            color: #1a523c;
+            font-size: 16px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .info {
+            padding: 18px;
+        }
+
+        .info h4 {
+            font-size: 25px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #222;
+        }
+
+        .info p {
+            color: #666;
+            font-size: 17px;
+            margin-bottom: 4px;
+        }
+
+        .date-text {
+            font-size: 14px;
+            color: #888;
+            margin-top: 8px;
+        }
+
+        .price {
+            font-size: 31px;
+            color: #1a523c;
+            font-weight: bold;
+            margin-top: 12px;
+        }
+
+        /* BOTONES DE TARJETA */
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .btn-action {
+            flex: 1;
+            text-align: center;
+
+            padding: 14px 8px;
+            border-radius: 15px;
+
+            text-decoration: none;
+            color: white;
+
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .evidence {
+            background: #257756;
+        }
+
+        .delete {
+            background: #dc3545;
+        }
+
+        .btn-action:hover {
+            color: white;
+            opacity: 0.9;
+        }
+
+        /* SIN COMPRAS */
+
+        .empty-history {
+            margin: 25px 15px;
+            padding: 35px 20px;
+
+            background: white;
+            border-radius: 25px;
+
+            text-align: center;
+            color: #666;
+
+            box-shadow:
+                0 5px 18px rgba(0, 0, 0, 0.08);
+        }
+
+        .empty-history i {
+            display: block;
+            font-size: 50px;
+            color: #1a523c;
+            margin-bottom: 15px;
+        }
+
+        /* BOTÓN FLOTANTE */
+
+        .btn-add {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #1a523c,
+                    #2b8a64
+                );
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            color: white;
+            font-size: 38px;
+            text-decoration: none;
+
+            box-shadow:
+                0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-add:hover {
+            color: white;
+        }
+
+        /* MODAL DE IMAGEN */
+
+        .modal-img {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+
+            top: 0;
+            left: 0;
+
+            width: 100%;
+            height: 100%;
+
+            background: rgba(0, 0, 0, 0.85);
+
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-img img {
+            max-width: 92%;
+            max-height: 90%;
+            border-radius: 20px;
+        }
+
+        /* RESPONSIVE */
+
+        @media (min-width: 768px) {
+            .summary-container,
+            .search-box,
+            .buttons,
+            .history-container {
+                max-width: 900px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .card-pro img {
+                height: 350px;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-<!-- HEADER -->
+    <!-- HEADER -->
 
-<div class="header">
+    <div class="header">
 
-    <div style="font-size:55px;">
-        <i class="fa-solid fa-cart-shopping"></i>
+        <div class="header-icon">
+            <i class="fa-solid fa-cart-shopping"></i>
+        </div>
+
+        <h1>Historial de compras</h1>
+
+        <p>
+            Sistema inteligente de compras
+        </p>
+
     </div>
 
-    <h1>Historial de compras</h1>
+    <!-- RESUMEN -->
 
-    <p>
-        Sistema inteligente de compras
-    </p>
+    <div class="summary-container">
 
-</div>
+        <div class="row g-3">
 
-<!-- RESUMEN -->
+            <div class="col-6">
 
-<div class="summary-container">
+                <div class="summary-card">
 
-<div class="row g-3">
+                    <div class="circle-icon">
+                        <i class="fa-solid fa-bag-shopping"></i>
+                    </div>
 
-<div class="col-6">
+                    <div class="summary-title">
+                        Compras
+                    </div>
 
-<div class="summary-card">
+                    <div class="summary-value">
+                        {{ total_compras }}
+                    </div>
 
-<div class="circle-icon">
-<i class="fa-solid fa-bag-shopping"></i>
-</div>
+                </div>
 
-<div class="summary-title">
-Compras
-</div>
+            </div>
 
-<div class="summary-value">
-{{ total_compras }}
-</div>
+            <div class="col-6">
 
-</div>
+                <div class="summary-card">
 
-</div>
+                    <div class="circle-icon">
+                        <i class="fa-solid fa-dollar-sign"></i>
+                    </div>
 
-<div class="col-6">
+                    <div class="summary-title">
+                        Gasto total
+                    </div>
 
-<div class="summary-card">
+                    <div class="summary-value">
+                        ${{ "%.2f"|format(total_gasto|float) }}
+                    </div>
 
-<div class="circle-icon">
-<i class="fa-solid fa-dollar-sign"></i>
-</div>
+                </div>
 
-<div class="summary-title">
-Gasto Total
-</div>
+            </div>
 
-<div class="summary-value">
-${{ total_gasto }}
-</div>
+        </div>
 
-</div>
+    </div>
 
-</div>
+    <!-- BUSCADOR GLOBAL -->
 
-</div>
+    <div class="search-box">
 
-</div>
+        <input
+            type="search"
+            id="globalSearch"
+            placeholder="Buscar compras..."
+            autocomplete="off"
+        >
 
-<!-- BUSCADOR -->
+    </div>
 
-<div class="search-box">
+    <!-- BOTONES -->
 
-<input type="text"
-id="globalSearch"
-placeholder="Buscar compras...">
+    <div class="buttons">
 
-</div>
+        <a
+            href="{{ url_for('papelera') }}"
+            class="btn-pro btn-trash"
+        >
+            <i class="fa-solid fa-trash"></i>
+            Papelera
+        </a>
 
-<!-- BOTONES -->
+        <a
+            href="{{ url_for('compras') }}"
+            class="btn-pro btn-new"
+        >
+            <i class="fa-solid fa-plus"></i>
+            Nueva compra
+        </a>
 
-<div class="buttons">
+    </div>
 
-<a href="/papelera" class="btn-pro btn-trash">
+    <!-- HISTORIAL -->
 
-<i class="fa-solid fa-trash"></i>
-Papelera
+    <div class="history-container">
 
-</a>
+        {% if compras %}
 
-<a href="/compras" class="btn-pro btn-new">
+            {% for fecha, grupo in compras|groupby("fecha")|reverse %}
 
-<i class="fa-solid fa-plus"></i>
-Nueva Compra
+                <div class="day-box">
 
-</a>
+                    <div
+                        class="day-header"
+                        onclick="toggleDay('dia{{ loop.index }}')"
+                    >
 
-</div>
+                        <div class="day-date">
 
-<!-- DÍAS -->
+                            <i class="fa-solid fa-calendar-days"></i>
 
-{% for d in por_dia %}
+                            <span>
+                                {{ fecha.strftime("%d/%m/%Y") }}
+                            </span>
 
-<div class="day-box">
+                        </div>
+
+                        <div class="day-total">
+                            ${{ "%.2f"|format(
+                                (grupo|sum(attribute="monto"))|float
+                            ) }}
+                        </div>
 
-<div class="day-header"
-onclick="toggleDay('dia{{ loop.index }}')">
+                    </div>
 
-<div>
+                    <div
+                        class="day-content"
+                        id="dia{{ loop.index }}"
+                    >
+
+                        <input
+                            type="search"
+                            class="form-control day-search"
+                            placeholder="Buscar dentro del día..."
+                            oninput="buscarDentro(
+                                this,
+                                'contenido{{ loop.index }}'
+                            )"
+                        >
+
+                        <div id="contenido{{ loop.index }}">
+
+                            {% for compra in grupo %}
+
+                                <div class="card-pro item-dia">
+
+                                    {% if compra.evidencia %}
+
+                                        {% set extension =
+                                            compra.evidencia
+                                            .rsplit(".", 1)[-1]
+                                            |lower
+                                        %}
+
+                                        {% if extension in [
+                                            "jpg",
+                                            "jpeg",
+                                            "png",
+                                            "webp"
+                                        ] %}
+
+                                            <img
+                                                src="{{ url_for(
+                                                    'mostrar_archivo',
+                                                    nombre_archivo=compra.evidencia
+                                                ) }}"
+                                                alt="Evidencia de {{ compra.producto }}"
+                                                loading="lazy"
+                                                onclick="abrirImagen(this.src)"
+                                            >
 
-<i class="fa-solid fa-calendar-days"></i>
+                                        {% else %}
 
-{{ d[0] }}
+                                            <div class="archivo-pdf">
 
-</div>
+                                                <i class="fa-solid fa-file-pdf"></i>
 
-<div class="day-total">
+                                                <a
+                                                    href="{{ url_for(
+                                                        'mostrar_archivo',
+                                                        nombre_archivo=compra.evidencia
+                                                    ) }}"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    Ver evidencia
+                                                </a>
 
-${{ d[2] }}
+                                            </div>
 
-</div>
+                                        {% endif %}
 
-</div>
+                                    {% endif %}
 
-<div class="day-content"
-id="dia{{ loop.index }}">
+                                    <div class="info">
 
-<input type="text"
-class="form-control mb-3"
-placeholder="Buscar dentro del día..."
-onkeyup="buscarDentro(this,'contenido{{ loop.index }}')">
+                                        <h4>
+                                            {{ compra.producto }}
+                                        </h4>
 
-<div id="contenido{{ loop.index }}">
+                                        <p>
+                                            <i class="fa-solid fa-building"></i>
+                                            {{ compra.proveedor }}
+                                        </p>
 
-{% for compra in compras %}
-{% if compra[4] == d[0] %}
+                                        <p class="date-text">
+                                            <i class="fa-solid fa-calendar"></i>
 
-<div class="card-pro item-dia">
+                                            {{ compra.fecha.strftime(
+                                                "%d/%m/%Y"
+                                            ) }}
+                                        </p>
 
-<img src="/uploads/{{ compra[5] }}"
-onclick="abrirImagen(this.src)">
+                                        <div class="price">
+                                            ${{ "%.2f"|format(
+                                                compra.monto|float
+                                            ) }}
+                                        </div>
 
-<div class="info">
+                                        <div class="actions">
 
-<h4>{{ compra[1] }}</h4>
+                                            {% if compra.evidencia %}
 
-<p>{{ compra[2] }}</p>
+                                                <a
+                                                    href="{{ url_for(
+                                                        'mostrar_archivo',
+                                                        nombre_archivo=compra.evidencia
+                                                    ) }}"
+                                                    class="btn-action evidence"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    <i class="fa-solid fa-eye"></i>
+                                                    Evidencia
+                                                </a>
 
-<div class="price">
-${{ compra[3] }}
-</div>
+                                            {% endif %}
 
-<div class="actions">
+                                            <a
+                                                href="{{ url_for(
+                                                    'eliminar',
+                                                    id=compra.id
+                                                ) }}"
+                                                class="btn-action delete"
+                                                onclick="return confirmarEliminacion()"
+                                            >
+                                                <i class="fa-solid fa-trash"></i>
+                                                Eliminar
+                                            </a>
 
-<a href="/editar/{{ compra[0] }}"
-class="btn-action edit">
+                                        </div>
 
-Editar
+                                    </div>
 
-</a>
+                                </div>
 
-<a href="/eliminar/{{ compra[0] }}"
-class="btn-action delete"
-onclick="return confirmarEliminacion()">
+                            {% endfor %}
 
-Eliminar
+                        </div>
 
-</a>
+                    </div>
+
+                </div>
 
-</div>
+            {% endfor %}
 
-</div>
+        {% else %}
 
-</div>
+            <div class="empty-history">
 
-{% endif %}
-{% endfor %}
+                <i class="fa-solid fa-cart-shopping"></i>
 
-</div>
+                <h3>No hay compras registradas</h3>
 
-</div>
+                <p>
+                    Pulsa “Nueva compra” para agregar la primera.
+                </p>
 
-</div>
+            </div>
 
-{% endfor %}
+        {% endif %}
+
+    </div>
 
-<!-- BOTÓN FLOTANTE -->
+    <!-- BOTÓN FLOTANTE -->
+
+    <a
+        href="{{ url_for('compras') }}"
+        class="btn-add"
+        aria-label="Nueva compra"
+    >
+        <i class="fa-solid fa-plus"></i>
+    </a>
+
+    <!-- MODAL -->
 
-<a href="/compras" class="btn-add">
+    <div
+        class="modal-img"
+        id="modalImg"
+        onclick="cerrarImagen()"
+    >
+        <img
+            id="imgModal"
+            alt="Evidencia ampliada"
+        >
+    </div>
 
-<i class="fa-solid fa-plus"></i>
+    <script>
+        function toggleDay(id) {
+            const box = document.getElementById(id);
 
-</a>
+            if (!box) {
+                return;
+            }
 
-<!-- MODAL -->
-
-<div class="modal-img"
-id="modalImg"
-onclick="cerrarImagen()">
-
-<img id="imgModal">
-
-</div>
-
-<script>
-
-function toggleDay(id){
-
-    let box = document.getElementById(id);
-
-    box.style.display =
-    box.style.display === "block"
-    ? "none"
-    : "block";
-
-}
-
-document.getElementById("globalSearch")
-.addEventListener("keyup", function(){
-
-    let value = this.value.toLowerCase();
-
-    document.querySelectorAll(".day-box")
-    .forEach(d=>{
-
-        d.style.display =
-        d.innerText.toLowerCase()
-        .includes(value)
-        ? "block"
-        : "none";
-
-    });
-
-});
-
-function buscarDentro(input,id){
-
-    let value = input.value.toLowerCase();
-
-    document.querySelectorAll("#"+id+" .item-dia")
-    .forEach(item=>{
-
-        item.style.display =
-        item.innerText.toLowerCase()
-        .includes(value)
-        ? "block"
-        : "none";
-
-    });
-
-}
-
-function abrirImagen(src){
-
-    document.getElementById("modalImg")
-    .style.display="flex";
-
-    document.getElementById("imgModal")
-    .src=src;
-
-}
-
-function cerrarImagen(){
-
-    document.getElementById("modalImg")
-    .style.display="none";
-
-}
-
-function confirmarEliminacion(){
-
-    return confirm("¿Seguro que deseas eliminar esta compra?");
-
-}
-
-</script>
+            box.style.display =
+                box.style.display === "block"
+                    ? "none"
+                    : "block";
+        }
+
+
+        const globalSearch =
+            document.getElementById("globalSearch");
+
+        if (globalSearch) {
+            globalSearch.addEventListener(
+                "input",
+                function () {
+                    const value = this.value
+                        .toLowerCase()
+                        .trim();
+
+                    document
+                        .querySelectorAll(".day-box")
+                        .forEach(function (day) {
+                            const contenido = day.textContent
+                                .toLowerCase();
+
+                            const coincide =
+                                contenido.includes(value);
+
+                            day.style.display =
+                                coincide
+                                    ? "block"
+                                    : "none";
+
+                            if (value && coincide) {
+                                const dayContent =
+                                    day.querySelector(
+                                        ".day-content"
+                                    );
+
+                                if (dayContent) {
+                                    dayContent.style.display =
+                                        "block";
+                                }
+                            }
+                        });
+                }
+            );
+        }
+
+
+        function buscarDentro(input, id) {
+            const value = input.value
+                .toLowerCase()
+                .trim();
+
+            const contenido =
+                document.getElementById(id);
+
+            if (!contenido) {
+                return;
+            }
+
+            contenido
+                .querySelectorAll(".item-dia")
+                .forEach(function (item) {
+                    const coincide = item.textContent
+                        .toLowerCase()
+                        .includes(value);
+
+                    item.style.display =
+                        coincide
+                            ? "block"
+                            : "none";
+                });
+        }
+
+
+        function abrirImagen(src) {
+            const modal =
+                document.getElementById("modalImg");
+
+            const imagen =
+                document.getElementById("imgModal");
+
+            modal.style.display = "flex";
+            imagen.src = src;
+        }
+
+
+        function cerrarImagen() {
+            document
+                .getElementById("modalImg")
+                .style.display = "none";
+        }
+
+
+        function confirmarEliminacion() {
+            return confirm(
+                "¿Seguro que deseas enviar esta compra a la papelera?"
+            );
+        }
+    </script>
 
 </body>
-</html> este es mi historial
+
+</html>
