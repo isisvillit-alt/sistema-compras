@@ -2,6 +2,7 @@ import os
 import uuid
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
+from functools import wraps
 
 import psycopg
 from psycopg.errors import UniqueViolation
@@ -15,6 +16,7 @@ from flask import (
     request,
     send_from_directory,
     session,
+    url_for,
 )
 from flask_mail import Mail, Message
 from itsdangerous import (
@@ -34,9 +36,6 @@ from werkzeug.utils import secure_filename
 # ==================================================
 
 def variable_obligatoria(nombre):
-    """
-    Obtiene una variable de entorno obligatoria.
-    """
     valor = os.environ.get(nombre)
 
     if not valor:
@@ -47,15 +46,109 @@ def variable_obligatoria(nombre):
     return valor
 
 
-def usuario_autenticado():
-    """
-    Comprueba si existe una sesión iniciada.
-    """
-    return "user_id" in session
+def login_requerido(funcion):
+    @wraps(funcion)
+    def envoltura(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(
+                url_for("login")
+            )
+
+        return funcion(*args, **kwargs)
+
+    return envoltura
+
+
+def convertir_monto(texto):
+    try:
+        monto = Decimal(
+            texto.strip().replace(",", ".")
+        )
+
+        if not monto.is_finite():
+            raise InvalidOperation
+
+        monto = monto.quantize(
+            Decimal("0.01")
+        )
+
+    except (
+        InvalidOperation,
+        AttributeError,
+    ):
+        raise ValueError(
+            "El monto no es válido"
+        )
+
+    if monto < 0:
+        raise ValueError(
+            "El monto no puede ser negativo"
+        )
+
+    return monto
+
+
+def convertir_fecha(texto):
+    try:
+        return datetime.strptime(
+            texto,
+            "%Y-%m-%d",
+        ).date()
+
+    except (
+        TypeError,
+        ValueError,
+    ):
+        raise ValueError(
+            "La fecha no es válida"
+        )
+
+
+def obtener_limites_mes(clave_mes):
+    try:
+        inicio = datetime.strptime(
+            clave_mes,
+            "%Y-%m",
+        ).date()
+
+    except ValueError:
+        abort(404)
+
+    if inicio.month == 12:
+        fin = inicio.replace(
+            year=inicio.year + 1,
+            month=1,
+        )
+
+    else:
+        fin = inicio.replace(
+            month=inicio.month + 1,
+        )
+
+    return inicio, fin
+
+
+def nombre_mes(numero):
+    meses = {
+        1: "Enero",
+        2: "Febrero",
+        3: "Marzo",
+        4: "Abril",
+        5: "Mayo",
+        6: "Junio",
+        7: "Julio",
+        8: "Agosto",
+        9: "Septiembre",
+        10: "Octubre",
+        11: "Noviembre",
+        12: "Diciembre",
+    }
+
+    return meses[numero]
 
 
 # ==================================================
-# CONFIGURACIÓN DE FLASK
+# APP
 # ==================================================
 
 app = Flask(__name__)
@@ -68,7 +161,7 @@ app.config["SESSION_COOKIE_SECURE"] = True
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
-# Máximo 10 MB por evidencia
+# Máximo 10 MB
 app.config["MAX_CONTENT_LENGTH"] = (
     10 * 1024 * 1024
 )
@@ -78,42 +171,37 @@ serializer = URLSafeTimedSerializer(
 )
 
 
-# ==================================================
-# EVITAR CACHÉ EN PÁGINAS DINÁMICAS
-# ==================================================
-
 @app.after_request
 def evitar_cache(response):
-    """
-    Evita que el navegador muestre versiones antiguas
-    del historial después de guardar una compra.
-    """
     if request.endpoint != "static":
         response.headers["Cache-Control"] = (
-            "no-store, no-cache, must-revalidate, "
-            "max-age=0"
+            "no-store, no-cache, "
+            "must-revalidate, max-age=0"
         )
 
-        response.headers["Pragma"] = "no-cache"
+        response.headers["Pragma"] = (
+            "no-cache"
+        )
+
         response.headers["Expires"] = "0"
 
     return response
 
 
 # ==================================================
-# CONFIGURACIÓN DEL CORREO
+# CORREO
 # ==================================================
 
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 587
 app.config["MAIL_USE_TLS"] = True
 
-app.config["MAIL_USERNAME"] = os.environ.get(
-    "MAIL_USERNAME"
+app.config["MAIL_USERNAME"] = (
+    os.environ.get("MAIL_USERNAME")
 )
 
-app.config["MAIL_PASSWORD"] = os.environ.get(
-    "MAIL_PASSWORD"
+app.config["MAIL_PASSWORD"] = (
+    os.environ.get("MAIL_PASSWORD")
 )
 
 mail = Mail(app)
@@ -124,9 +212,6 @@ mail = Mail(app)
 # ==================================================
 
 def get_db():
-    """
-    Crea una conexión con PostgreSQL de Supabase.
-    """
     return psycopg.connect(
         host=variable_obligatoria(
             "DB_HOST"
@@ -154,7 +239,7 @@ def get_db():
 
 
 # ==================================================
-# ARCHIVOS DE EVIDENCIA
+# EVIDENCIAS
 # ==================================================
 
 UPLOAD_FOLDER = os.path.join(
@@ -181,10 +266,6 @@ EXTENSIONES_PERMITIDAS = {
 
 
 def archivo_permitido(nombre_archivo):
-    """
-    Comprueba que el archivo tenga una extensión
-    permitida.
-    """
     if not nombre_archivo:
         return False
 
@@ -197,20 +278,88 @@ def archivo_permitido(nombre_archivo):
         .lower()
     )
 
-    return extension in EXTENSIONES_PERMITIDAS
+    return (
+        extension
+        in EXTENSIONES_PERMITIDAS
+    )
+
+
+def guardar_evidencia(archivo):
+    if (
+        archivo is None
+        or not archivo.filename
+    ):
+        raise ValueError(
+            "Debes seleccionar una evidencia"
+        )
+
+    if not archivo_permitido(
+        archivo.filename
+    ):
+        raise ValueError(
+            "Solo se permiten archivos "
+            "JPG, JPEG, PNG, WEBP o PDF"
+        )
+
+    nombre_seguro = secure_filename(
+        archivo.filename
+    )
+
+    if not nombre_seguro:
+        raise ValueError(
+            "El nombre del archivo "
+            "no es válido"
+        )
+
+    nombre_unico = (
+        f"{uuid.uuid4()}_"
+        f"{nombre_seguro}"
+    )
+
+    ruta_archivo = os.path.join(
+        app.config["UPLOAD_FOLDER"],
+        nombre_unico,
+    )
+
+    archivo.save(
+        ruta_archivo
+    )
+
+    return (
+        nombre_unico,
+        ruta_archivo,
+    )
+
+
+def borrar_evidencia(nombre_archivo):
+    if not nombre_archivo:
+        return
+
+    ruta_archivo = os.path.join(
+        app.config["UPLOAD_FOLDER"],
+        nombre_archivo,
+    )
+
+    if os.path.exists(
+        ruta_archivo
+    ):
+        try:
+            os.remove(
+                ruta_archivo
+            )
+
+        except OSError:
+            app.logger.exception(
+                "No se pudo borrar "
+                "la evidencia"
+            )
 
 
 @app.route(
     "/uploads/<path:nombre_archivo>"
 )
+@login_requerido
 def mostrar_archivo(nombre_archivo):
-    """
-    Muestra una evidencia únicamente cuando pertenece
-    al usuario que inició sesión.
-    """
-    if not usuario_autenticado():
-        return redirect("/")
-
     try:
         with get_db() as db:
             with db.cursor() as cursor:
@@ -228,7 +377,7 @@ def mostrar_archivo(nombre_archivo):
                     ),
                 )
 
-                evidencia = cursor.fetchone()
+                existe = cursor.fetchone()
 
     except Exception:
         app.logger.exception(
@@ -236,11 +385,12 @@ def mostrar_archivo(nombre_archivo):
         )
 
         return (
-            "No se pudo consultar la evidencia",
+            "No se pudo consultar "
+            "la evidencia",
             500,
         )
 
-    if not evidencia:
+    if not existe:
         abort(404)
 
     return send_from_directory(
@@ -249,14 +399,25 @@ def mostrar_archivo(nombre_archivo):
     )
 
 
+@app.route("/service-worker.js")
+def service_worker():
+    return send_from_directory(
+        app.static_folder,
+        "service-worker.js",
+        mimetype="application/javascript",
+    )
+
+
 # ==================================================
-# INICIO DE SESIÓN
+# LOGIN
 # ==================================================
 
 @app.route("/")
 def login():
-    if usuario_autenticado():
-        return redirect("/compras")
+    if "user_id" in session:
+        return redirect(
+            url_for("compras")
+        )
 
     return render_template(
         "login.html"
@@ -268,10 +429,6 @@ def login():
     methods=["POST"],
 )
 def validar():
-    """
-    Permite iniciar sesión con correo electrónico
-    o nombre de usuario.
-    """
     acceso = (
         request.form.get("email")
         or request.form.get("correo")
@@ -286,7 +443,8 @@ def validar():
 
     if not acceso or not password:
         return (
-            "Debes escribir correo y contraseña",
+            "Debes escribir correo "
+            "y contraseña",
             400,
         )
 
@@ -311,7 +469,7 @@ def validar():
                     ),
                 )
 
-                user = cursor.fetchone()
+                usuario = cursor.fetchone()
 
     except Exception:
         app.logger.exception(
@@ -319,23 +477,31 @@ def validar():
         )
 
         return (
-            "No se pudo conectar con la base de datos",
+            "No se pudo conectar con "
+            "la base de datos",
             500,
         )
 
     if (
-        user
+        usuario
         and check_password_hash(
-            user["password"],
+            usuario["password"],
             password,
         )
     ):
         session.clear()
 
-        session["user_id"] = user["id"]
-        session["usuario"] = user["usuario"]
+        session["user_id"] = (
+            usuario["id"]
+        )
 
-        return redirect("/compras")
+        session["usuario"] = (
+            usuario["usuario"]
+        )
+
+        return redirect(
+            url_for("compras")
+        )
 
     return (
         "Correo o contraseña incorrectos",
@@ -343,28 +509,29 @@ def validar():
     )
 
 
-# ==================================================
-# CERRAR SESIÓN
-# ==================================================
-
 @app.route("/salir")
 def salir():
     session.clear()
 
-    return redirect("/")
+    return redirect(
+        url_for("login")
+    )
 
 
 # ==================================================
-# FORMULARIO DE NUEVA COMPRA
+# FORMULARIO DE COMPRA
 # ==================================================
 
 @app.route("/compras")
+@login_requerido
 def compras():
-    if not usuario_autenticado():
-        return redirect("/")
-
     return render_template(
-        "compras.html"
+        "compras.html",
+        fecha_hoy=(
+            datetime.now()
+            .date()
+            .isoformat()
+        ),
     )
 
 
@@ -376,10 +543,8 @@ def compras():
     "/guardar",
     methods=["POST"],
 )
+@login_requerido
 def guardar():
-    if not usuario_autenticado():
-        return redirect("/")
-
     producto = request.form.get(
         "producto",
         "",
@@ -387,6 +552,11 @@ def guardar():
 
     proveedor = request.form.get(
         "proveedor",
+        "",
+    ).strip()
+
+    cliente = request.form.get(
+        "cliente",
         "",
     ).strip()
 
@@ -400,107 +570,36 @@ def guardar():
         "",
     ).strip()
 
-    if (
-        not producto
-        or not proveedor
-        or not monto_texto
-    ):
+    if not producto:
         return (
-            "Faltan datos de la compra",
+            "Debes escribir el producto",
             400,
         )
 
-    # Convertir monto
-    try:
-        monto = Decimal(
-            monto_texto.replace(
-                ",",
-                ".",
-            )
-        )
-
-        if not monto.is_finite():
-            raise InvalidOperation
-
-        monto = monto.quantize(
-            Decimal("0.01")
-        )
-
-    except InvalidOperation:
+    if not proveedor:
         return (
-            "El monto no es válido",
+            "Debes escribir el proveedor",
             400,
         )
-
-    if monto < 0:
-        return (
-            "El monto no puede ser negativo",
-            400,
-        )
-
-    # Obtener fecha del formulario o usar hoy
-    if fecha_texto:
-        try:
-            fecha = datetime.strptime(
-                fecha_texto,
-                "%Y-%m-%d",
-            ).date()
-
-        except ValueError:
-            return (
-                "La fecha no es válida",
-                400,
-            )
-
-    else:
-        fecha = datetime.now().date()
-
-    archivo = request.files.get(
-        "foto"
-    )
-
-    if (
-        archivo is None
-        or not archivo.filename
-    ):
-        return (
-            "Debes seleccionar una evidencia",
-            400,
-        )
-
-    if not archivo_permitido(
-        archivo.filename
-    ):
-        return (
-            "Solo se permiten archivos "
-            "JPG, JPEG, PNG, WEBP o PDF",
-            400,
-        )
-
-    nombre_seguro = secure_filename(
-        archivo.filename
-    )
-
-    if not nombre_seguro:
-        return (
-            "El nombre del archivo no es válido",
-            400,
-        )
-
-    nombre_unico = (
-        f"{uuid.uuid4()}_"
-        f"{nombre_seguro}"
-    )
-
-    ruta_archivo = os.path.join(
-        app.config["UPLOAD_FOLDER"],
-        nombre_unico,
-    )
 
     try:
-        archivo.save(
-            ruta_archivo
+        monto = convertir_monto(
+            monto_texto
         )
+
+        fecha = convertir_fecha(
+            fecha_texto
+        )
+
+        (
+            nombre_evidencia,
+            ruta_evidencia,
+        ) = guardar_evidencia(
+            request.files.get("foto")
+        )
+
+    except ValueError as error:
+        return str(error), 400
 
     except Exception:
         app.logger.exception(
@@ -508,7 +607,8 @@ def guardar():
         )
 
         return (
-            "No se pudo guardar la evidencia",
+            "No se pudo guardar "
+            "la evidencia",
             500,
         )
 
@@ -520,6 +620,7 @@ def guardar():
                     INSERT INTO compras (
                         producto,
                         proveedor,
+                        cliente,
                         monto,
                         fecha,
                         evidencia,
@@ -533,15 +634,17 @@ def guardar():
                         %s,
                         %s,
                         %s,
+                        %s,
                         FALSE
                     )
                     """,
                     (
                         producto,
                         proveedor,
+                        cliente or None,
                         monto,
                         fecha,
-                        nombre_unico,
+                        nombre_evidencia,
                         session["user_id"],
                     ),
                 )
@@ -552,10 +655,10 @@ def guardar():
         )
 
         if os.path.exists(
-            ruta_archivo
+            ruta_evidencia
         ):
             os.remove(
-                ruta_archivo
+                ruta_evidencia
             )
 
         return (
@@ -564,80 +667,26 @@ def guardar():
         )
 
     return redirect(
-        "/historial"
+        url_for(
+            "historial_dia",
+            fecha=fecha.isoformat(),
+        )
     )
 
 
 # ==================================================
-# HISTORIAL
+# HISTORIAL PRINCIPAL
 # ==================================================
 
 @app.route("/historial")
+@login_requerido
 def historial():
-    """
-    Organiza las compras de la siguiente manera:
-
-    Todas las compras
-        Mes
-            Día
-                Compras
-    """
-    if not usuario_autenticado():
-        return redirect("/")
-
-    nombres_meses = {
-        1: "Enero",
-        2: "Febrero",
-        3: "Marzo",
-        4: "Abril",
-        5: "Mayo",
-        6: "Junio",
-        7: "Julio",
-        8: "Agosto",
-        9: "Septiembre",
-        10: "Octubre",
-        11: "Noviembre",
-        12: "Diciembre",
-    }
-
     try:
         with get_db() as db:
             with db.cursor() as cursor:
-                # Obtener todas las compras activas
                 cursor.execute(
                     """
-                    SELECT
-                        id,
-                        producto,
-                        proveedor,
-                        monto,
-                        fecha,
-                        evidencia,
-                        user_id,
-                        eliminado
-                    FROM compras
-                    WHERE user_id = %s
-                      AND eliminado = FALSE
-                    ORDER BY fecha DESC, id DESC
-                    """,
-                    (
-                        session["user_id"],
-                    ),
-                )
-
-                lista_compras = (
-                    cursor.fetchall()
-                )
-
-                # Obtener resumen general
-                cursor.execute(
-                    """
-                    SELECT
-                        COUNT(*) AS total,
-                        COALESCE(
-                            SUM(monto),
-                            0
-                        ) AS gasto
+                    SELECT COUNT(*) AS total
                     FROM compras
                     WHERE user_id = %s
                       AND eliminado = FALSE
@@ -655,106 +704,513 @@ def historial():
         )
 
         return (
-            "No se pudo cargar el historial",
+            "No se pudo cargar "
+            "el historial",
             500,
-        )
-
-    # ==================================================
-    # AGRUPAR PRIMERO POR MES Y DESPUÉS POR DÍA
-    # ==================================================
-
-    grupos_meses = {}
-
-    for compra in lista_compras:
-        fecha = compra["fecha"]
-
-        clave_mes = fecha.strftime(
-            "%Y-%m"
-        )
-
-        clave_dia = fecha.isoformat()
-
-        monto = (
-            compra["monto"]
-            if compra["monto"] is not None
-            else Decimal("0.00")
-        )
-
-        # Crear carpeta del mes
-        if clave_mes not in grupos_meses:
-            grupos_meses[clave_mes] = {
-                "clave": clave_mes,
-                "nombre": (
-                    f"{nombres_meses[fecha.month]} "
-                    f"{fecha.year}"
-                ),
-                "cantidad": 0,
-                "total": Decimal("0.00"),
-                "dias": {},
-            }
-
-        mes = grupos_meses[
-            clave_mes
-        ]
-
-        mes["cantidad"] += 1
-        mes["total"] += monto
-
-        # Crear carpeta del día
-        if clave_dia not in mes["dias"]:
-            mes["dias"][clave_dia] = {
-                "clave": clave_dia,
-                "fecha": fecha,
-                "cantidad": 0,
-                "total": Decimal("0.00"),
-                "compras": [],
-            }
-
-        dia = mes["dias"][
-            clave_dia
-        ]
-
-        dia["cantidad"] += 1
-        dia["total"] += monto
-        dia["compras"].append(
-            compra
-        )
-
-    # Ordenar meses del más reciente al más antiguo
-    meses = sorted(
-        grupos_meses.values(),
-        key=lambda elemento: elemento["clave"],
-        reverse=True,
-    )
-
-    # Ordenar los días de cada mes
-    for mes in meses:
-        mes["dias"] = sorted(
-            mes["dias"].values(),
-            key=lambda elemento: elemento["clave"],
-            reverse=True,
         )
 
     return render_template(
         "historial.html",
-        compras=lista_compras,
-        meses=meses,
         total_compras=resumen["total"],
-        total_gasto=resumen["gasto"],
     )
 
 
 # ==================================================
-# ENVIAR COMPRA A PAPELERA
+# CARPETAS DE MESES
+# ==================================================
+
+@app.route("/historial/meses")
+@login_requerido
+def historial_meses():
+    try:
+        with get_db() as db:
+            with db.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT
+                        EXTRACT(
+                            YEAR FROM fecha
+                        )::INTEGER AS anio,
+
+                        EXTRACT(
+                            MONTH FROM fecha
+                        )::INTEGER AS mes,
+
+                        COUNT(*) AS cantidad,
+
+                        COALESCE(
+                            SUM(monto),
+                            0
+                        ) AS total
+
+                    FROM compras
+
+                    WHERE user_id = %s
+                      AND eliminado = FALSE
+
+                    GROUP BY
+                        EXTRACT(YEAR FROM fecha),
+                        EXTRACT(MONTH FROM fecha)
+
+                    ORDER BY
+                        anio DESC,
+                        mes DESC
+                    """,
+                    (
+                        session["user_id"],
+                    ),
+                )
+
+                resultados = cursor.fetchall()
+
+    except Exception:
+        app.logger.exception(
+            "Error cargando meses"
+        )
+
+        return (
+            "No se pudieron cargar "
+            "los meses",
+            500,
+        )
+
+    meses = []
+
+    for resultado in resultados:
+        meses.append(
+            {
+                "clave": (
+                    f"{resultado['anio']:04d}-"
+                    f"{resultado['mes']:02d}"
+                ),
+                "nombre": (
+                    f"{nombre_mes(resultado['mes'])} "
+                    f"{resultado['anio']}"
+                ),
+                "cantidad": (
+                    resultado["cantidad"]
+                ),
+                "total": resultado["total"],
+            }
+        )
+
+    return render_template(
+        "historial_meses.html",
+        meses=meses,
+    )
+
+
+# ==================================================
+# CARPETAS DE DÍAS
 # ==================================================
 
 @app.route(
-    "/eliminar/<int:id>",
+    "/historial/mes/<clave_mes>"
+)
+@login_requerido
+def historial_mes(clave_mes):
+    inicio, fin = obtener_limites_mes(
+        clave_mes
+    )
+
+    titulo_mes = (
+        f"{nombre_mes(inicio.month)} "
+        f"{inicio.year}"
+    )
+
+    try:
+        with get_db() as db:
+            with db.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT
+                        fecha,
+                        COUNT(*) AS cantidad,
+                        COALESCE(
+                            SUM(monto),
+                            0
+                        ) AS total
+
+                    FROM compras
+
+                    WHERE user_id = %s
+                      AND eliminado = FALSE
+                      AND fecha >= %s
+                      AND fecha < %s
+
+                    GROUP BY fecha
+
+                    ORDER BY fecha DESC
+                    """,
+                    (
+                        session["user_id"],
+                        inicio,
+                        fin,
+                    ),
+                )
+
+                dias = cursor.fetchall()
+
+    except Exception:
+        app.logger.exception(
+            "Error cargando días"
+        )
+
+        return (
+            "No se pudieron cargar "
+            "los días",
+            500,
+        )
+
+    return render_template(
+        "historial_dias.html",
+        dias=dias,
+        titulo_mes=titulo_mes,
+    )
+
+
+# ==================================================
+# COMPRAS DE UN DÍA
+# ==================================================
+
+@app.route(
+    "/historial/dia/<fecha>"
+)
+@login_requerido
+def historial_dia(fecha):
+    try:
+        fecha_compra = convertir_fecha(
+            fecha
+        )
+
+    except ValueError:
+        abort(404)
+
+    try:
+        with get_db() as db:
+            with db.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT
+                        id,
+                        producto,
+                        proveedor,
+                        cliente,
+                        monto,
+                        fecha,
+                        evidencia
+
+                    FROM compras
+
+                    WHERE user_id = %s
+                      AND eliminado = FALSE
+                      AND fecha = %s
+
+                    ORDER BY id DESC
+                    """,
+                    (
+                        session["user_id"],
+                        fecha_compra,
+                    ),
+                )
+
+                lista_compras = (
+                    cursor.fetchall()
+                )
+
+    except Exception:
+        app.logger.exception(
+            "Error cargando compras del día"
+        )
+
+        return (
+            "No se pudieron cargar "
+            "las compras",
+            500,
+        )
+
+    return render_template(
+        "historial_compras.html",
+        compras=lista_compras,
+        titulo=fecha_compra.strftime(
+            "%d/%m/%Y"
+        ),
+        subtitulo="Compras del día",
+        volver_url=url_for(
+            "historial_mes",
+            clave_mes=fecha_compra.strftime(
+                "%Y-%m"
+            ),
+        ),
+    )
+
+
+# ==================================================
+# BUSCAR COMPRAS
+# ==================================================
+
+@app.route("/historial/buscar")
+@login_requerido
+def historial_buscar():
+    texto = request.args.get(
+        "q",
+        "",
+    ).strip().lower()
+
+    fecha_texto = request.args.get(
+        "fecha",
+        "",
+    ).strip()
+
+    condiciones = [
+        "user_id = %s",
+        "eliminado = FALSE",
+    ]
+
+    valores = [
+        session["user_id"],
+    ]
+
+    if texto:
+        patron = f"%{texto}%"
+
+        condiciones.append(
+            """
+            (
+                LOWER(producto) LIKE %s
+                OR LOWER(proveedor) LIKE %s
+                OR LOWER(
+                    COALESCE(cliente, '')
+                ) LIKE %s
+            )
+            """
+        )
+
+        valores.extend(
+            [
+                patron,
+                patron,
+                patron,
+            ]
+        )
+
+    if fecha_texto:
+        try:
+            fecha_busqueda = (
+                convertir_fecha(
+                    fecha_texto
+                )
+            )
+
+        except ValueError as error:
+            return str(error), 400
+
+        condiciones.append(
+            "fecha = %s"
+        )
+
+        valores.append(
+            fecha_busqueda
+        )
+
+    consulta = f"""
+        SELECT
+            id,
+            producto,
+            proveedor,
+            cliente,
+            monto,
+            fecha,
+            evidencia
+
+        FROM compras
+
+        WHERE {' AND '.join(condiciones)}
+
+        ORDER BY fecha DESC, id DESC
+    """
+
+    try:
+        with get_db() as db:
+            with db.cursor() as cursor:
+                cursor.execute(
+                    consulta,
+                    tuple(valores),
+                )
+
+                lista_compras = (
+                    cursor.fetchall()
+                )
+
+    except Exception:
+        app.logger.exception(
+            "Error buscando compras"
+        )
+
+        return (
+            "No se pudo realizar "
+            "la búsqueda",
+            500,
+        )
+
+    return render_template(
+        "historial_compras.html",
+        compras=lista_compras,
+        titulo="Resultados",
+        subtitulo=(
+            "Resultados de la búsqueda"
+        ),
+        volver_url=url_for(
+            "historial"
+        ),
+    )
+
+
+# ==================================================
+# EDITAR COMPRA
+# ==================================================
+
+@app.route(
+    "/editar/<int:id>",
     methods=["GET", "POST"],
 )
-def eliminar(id):
-    if not usuario_autenticado():
-        return redirect("/")
+@login_requerido
+def editar_compra(id):
+    try:
+        with get_db() as db:
+            with db.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT
+                        id,
+                        producto,
+                        proveedor,
+                        cliente,
+                        monto,
+                        fecha,
+                        evidencia
+
+                    FROM compras
+
+                    WHERE id = %s
+                      AND user_id = %s
+                      AND eliminado = FALSE
+
+                    LIMIT 1
+                    """,
+                    (
+                        id,
+                        session["user_id"],
+                    ),
+                )
+
+                compra = cursor.fetchone()
+
+    except Exception:
+        app.logger.exception(
+            "Error consultando compra"
+        )
+
+        return (
+            "No se pudo consultar "
+            "la compra",
+            500,
+        )
+
+    if not compra:
+        abort(404)
+
+    if request.method == "GET":
+        return render_template(
+            "editar_compra.html",
+            compra=compra,
+        )
+
+    producto = request.form.get(
+        "producto",
+        "",
+    ).strip()
+
+    proveedor = request.form.get(
+        "proveedor",
+        "",
+    ).strip()
+
+    cliente = request.form.get(
+        "cliente",
+        "",
+    ).strip()
+
+    monto_texto = request.form.get(
+        "monto",
+        "",
+    ).strip()
+
+    fecha_texto = request.form.get(
+        "fecha",
+        "",
+    ).strip()
+
+    if not producto:
+        return (
+            "Debes escribir el producto",
+            400,
+        )
+
+    if not proveedor:
+        return (
+            "Debes escribir el proveedor",
+            400,
+        )
+
+    try:
+        monto = convertir_monto(
+            monto_texto
+        )
+
+        fecha_nueva = convertir_fecha(
+            fecha_texto
+        )
+
+    except ValueError as error:
+        return str(error), 400
+
+    archivo_nuevo = request.files.get(
+        "foto"
+    )
+
+    evidencia_nueva = (
+        compra["evidencia"]
+    )
+
+    ruta_nueva = None
+
+    if (
+        archivo_nuevo is not None
+        and archivo_nuevo.filename
+    ):
+        try:
+            (
+                evidencia_nueva,
+                ruta_nueva,
+            ) = guardar_evidencia(
+                archivo_nuevo
+            )
+
+        except ValueError as error:
+            return str(error), 400
+
+        except Exception:
+            app.logger.exception(
+                "Error guardando "
+                "evidencia nueva"
+            )
+
+            return (
+                "No se pudo guardar "
+                "la evidencia",
+                500,
+            )
 
     try:
         with get_db() as db:
@@ -762,7 +1218,85 @@ def eliminar(id):
                 cursor.execute(
                     """
                     UPDATE compras
+
+                    SET
+                        producto = %s,
+                        proveedor = %s,
+                        cliente = %s,
+                        monto = %s,
+                        fecha = %s,
+                        evidencia = %s
+
+                    WHERE id = %s
+                      AND user_id = %s
+                      AND eliminado = FALSE
+                    """,
+                    (
+                        producto,
+                        proveedor,
+                        cliente or None,
+                        monto,
+                        fecha_nueva,
+                        evidencia_nueva,
+                        id,
+                        session["user_id"],
+                    ),
+                )
+
+    except Exception:
+        app.logger.exception(
+            "Error actualizando compra"
+        )
+
+        if (
+            ruta_nueva
+            and os.path.exists(ruta_nueva)
+        ):
+            os.remove(
+                ruta_nueva
+            )
+
+        return (
+            "No se pudo actualizar "
+            "la compra",
+            500,
+        )
+
+    if (
+        ruta_nueva
+        and compra["evidencia"]
+        != evidencia_nueva
+    ):
+        borrar_evidencia(
+            compra["evidencia"]
+        )
+
+    return redirect(
+        url_for(
+            "historial_dia",
+            fecha=fecha_nueva.isoformat(),
+        )
+    )
+
+
+# ==================================================
+# PAPELERA
+# ==================================================
+
+@app.route(
+    "/eliminar/<int:id>",
+    methods=["GET", "POST"],
+)
+@login_requerido
+def eliminar(id):
+    try:
+        with get_db() as db:
+            with db.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE compras
                     SET eliminado = TRUE
+
                     WHERE id = %s
                       AND user_id = %s
                     """,
@@ -774,45 +1308,35 @@ def eliminar(id):
 
     except Exception:
         app.logger.exception(
-            "Error enviando compra a papelera"
+            "Error enviando compra "
+            "a papelera"
         )
 
         return (
-            "No se pudo eliminar la compra",
+            "No se pudo eliminar "
+            "la compra",
             500,
         )
 
     return redirect(
-        "/historial"
+        url_for("historial")
     )
 
 
-# ==================================================
-# PAPELERA
-# ==================================================
-
 @app.route("/papelera")
+@login_requerido
 def papelera():
-    if not usuario_autenticado():
-        return redirect("/")
-
     try:
         with get_db() as db:
             with db.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT
-                        id,
-                        producto,
-                        proveedor,
-                        monto,
-                        fecha,
-                        evidencia,
-                        user_id,
-                        eliminado
+                    SELECT *
                     FROM compras
+
                     WHERE user_id = %s
                       AND eliminado = TRUE
+
                     ORDER BY fecha DESC, id DESC
                     """,
                     (
@@ -830,7 +1354,8 @@ def papelera():
         )
 
         return (
-            "No se pudo cargar la papelera",
+            "No se pudo cargar "
+            "la papelera",
             500,
         )
 
@@ -840,18 +1365,12 @@ def papelera():
     )
 
 
-# ==================================================
-# RESTAURAR COMPRA
-# ==================================================
-
 @app.route(
     "/restaurar/<int:id>",
     methods=["GET", "POST"],
 )
+@login_requerido
 def restaurar(id):
-    if not usuario_autenticado():
-        return redirect("/")
-
     try:
         with get_db() as db:
             with db.cursor() as cursor:
@@ -859,6 +1378,7 @@ def restaurar(id):
                     """
                     UPDATE compras
                     SET eliminado = FALSE
+
                     WHERE id = %s
                       AND user_id = %s
                     """,
@@ -874,31 +1394,22 @@ def restaurar(id):
         )
 
         return (
-            "No se pudo restaurar la compra",
+            "No se pudo restaurar "
+            "la compra",
             500,
         )
 
     return redirect(
-        "/papelera"
+        url_for("papelera")
     )
 
-
-# ==================================================
-# ELIMINAR COMPRA DEFINITIVAMENTE
-# ==================================================
 
 @app.route(
     "/eliminar_definitivamente/<int:id>",
     methods=["GET", "POST"],
 )
+@login_requerido
 def eliminar_definitivamente(id):
-    """
-    Elimina definitivamente una compra que se encuentra
-    en la papelera y también intenta eliminar su evidencia.
-    """
-    if not usuario_autenticado():
-        return redirect("/")
-
     evidencia = None
 
     try:
@@ -908,9 +1419,11 @@ def eliminar_definitivamente(id):
                     """
                     SELECT evidencia
                     FROM compras
+
                     WHERE id = %s
                       AND user_id = %s
                       AND eliminado = TRUE
+
                     LIMIT 1
                     """,
                     (
@@ -922,11 +1435,14 @@ def eliminar_definitivamente(id):
                 compra = cursor.fetchone()
 
                 if compra:
-                    evidencia = compra["evidencia"]
+                    evidencia = (
+                        compra["evidencia"]
+                    )
 
                     cursor.execute(
                         """
                         DELETE FROM compras
+
                         WHERE id = %s
                           AND user_id = %s
                           AND eliminado = TRUE
@@ -939,40 +1455,27 @@ def eliminar_definitivamente(id):
 
     except Exception:
         app.logger.exception(
-            "Error eliminando compra definitivamente"
+            "Error eliminando compra "
+            "definitivamente"
         )
 
         return (
-            "No se pudo eliminar la compra",
+            "No se pudo eliminar "
+            "la compra",
             500,
         )
 
-    if evidencia:
-        ruta_archivo = os.path.join(
-            app.config["UPLOAD_FOLDER"],
-            evidencia,
-        )
-
-        if os.path.exists(
-            ruta_archivo
-        ):
-            try:
-                os.remove(
-                    ruta_archivo
-                )
-
-            except OSError:
-                app.logger.exception(
-                    "No se pudo eliminar la evidencia"
-                )
+    borrar_evidencia(
+        evidencia
+    )
 
     return redirect(
-        "/papelera"
+        url_for("papelera")
     )
 
 
 # ==================================================
-# FORMULARIO DE REGISTRO
+# REGISTRO
 # ==================================================
 
 @app.route("/registro")
@@ -981,10 +1484,6 @@ def registro():
         "registro.html"
     )
 
-
-# ==================================================
-# CREAR CUENTA
-# ==================================================
 
 @app.route(
     "/crear_cuenta",
@@ -1011,28 +1510,25 @@ def crear_cuenta():
         or not email
         or not password_raw
     ):
-        return (
-            "Faltan datos",
-            400,
-        )
+        return "Faltan datos", 400
 
     if "@" not in email:
         return (
-            "El correo electrónico no es válido",
+            "El correo no es válido",
             400,
         )
 
     if len(usuario) < 3:
         return (
-            "El usuario debe tener al menos "
-            "3 caracteres",
+            "El usuario debe tener "
+            "al menos 3 caracteres",
             400,
         )
 
     if len(password_raw) < 8:
         return (
-            "La contraseña debe tener al menos "
-            "8 caracteres",
+            "La contraseña debe tener "
+            "al menos 8 caracteres",
             400,
         )
 
@@ -1049,8 +1545,10 @@ def crear_cuenta():
                     """
                     SELECT id
                     FROM usuarios
+
                     WHERE LOWER(email) = %s
                        OR LOWER(usuario) = %s
+
                     LIMIT 1
                     """,
                     (
@@ -1063,7 +1561,8 @@ def crear_cuenta():
 
                 if existe:
                     return (
-                        "El correo o usuario ya existe",
+                        "El correo o usuario "
+                        "ya existe",
                         409,
                     )
 
@@ -1089,7 +1588,8 @@ def crear_cuenta():
 
     except UniqueViolation:
         return (
-            "El correo o usuario ya existe",
+            "El correo o usuario "
+            "ya existe",
             409,
         )
 
@@ -1099,15 +1599,18 @@ def crear_cuenta():
         )
 
         return (
-            "No se pudo crear la cuenta",
+            "No se pudo crear "
+            "la cuenta",
             500,
         )
 
-    return redirect("/")
+    return redirect(
+        url_for("login")
+    )
 
 
 # ==================================================
-# RECUPERAR CONTRASEÑA
+# RECUPERACIÓN DE CONTRASEÑA
 # ==================================================
 
 @app.route(
@@ -1138,13 +1641,15 @@ def recuperar():
                     """
                     SELECT id
                     FROM usuarios
+
                     WHERE LOWER(email) = %s
+
                     LIMIT 1
                     """,
                     (email,),
                 )
 
-                user = cursor.fetchone()
+                usuario = cursor.fetchone()
 
     except Exception:
         app.logger.exception(
@@ -1152,14 +1657,19 @@ def recuperar():
         )
 
         return (
-            "No se pudo consultar el correo",
+            "No se pudo consultar "
+            "el correo",
             500,
         )
 
-    if user:
+    if usuario:
         if (
-            not app.config["MAIL_USERNAME"]
-            or not app.config["MAIL_PASSWORD"]
+            not app.config[
+                "MAIL_USERNAME"
+            ]
+            or not app.config[
+                "MAIL_PASSWORD"
+            ]
         ):
             return (
                 "El servicio de correo "
@@ -1182,7 +1692,7 @@ def recuperar():
             or request.url_root.rstrip("/")
         ).rstrip("/")
 
-        link = (
+        enlace = (
             f"{base_url}"
             f"/reset_password/{token}"
         )
@@ -1196,9 +1706,9 @@ def recuperar():
         )
 
         mensaje.body = (
-            "Utiliza el siguiente enlace para "
-            "cambiar tu contraseña:\n\n"
-            f"{link}\n\n"
+            "Utiliza el siguiente enlace "
+            "para cambiar tu contraseña:"
+            f"\n\n{enlace}\n\n"
             "El enlace vence en una hora."
         )
 
@@ -1213,19 +1723,17 @@ def recuperar():
             )
 
             return (
-                "No se pudo enviar el correo",
+                "No se pudo enviar "
+                "el correo",
                 500,
             )
 
     return (
         "Si el correo está registrado, "
-        "recibirás un enlace de recuperación."
+        "recibirás un enlace "
+        "de recuperación."
     )
 
-
-# ==================================================
-# RESTABLECER CONTRASEÑA
-# ==================================================
 
 @app.route(
     "/reset_password/<token>",
@@ -1278,16 +1786,10 @@ def reset_password(token):
         or ""
     )
 
-    if not password_raw:
-        return (
-            "Debes escribir una contraseña",
-            400,
-        )
-
     if len(password_raw) < 8:
         return (
-            "La contraseña debe tener al menos "
-            "8 caracteres",
+            "La contraseña debe tener "
+            "al menos 8 caracteres",
             400,
         )
 
@@ -1296,7 +1798,8 @@ def reset_password(token):
         and password_raw != confirmar
     ):
         return (
-            "Las contraseñas no coinciden",
+            "Las contraseñas "
+            "no coinciden",
             400,
         )
 
@@ -1313,6 +1816,7 @@ def reset_password(token):
                     """
                     UPDATE usuarios
                     SET password = %s
+
                     WHERE LOWER(email) = %s
                     """,
                     (
@@ -1323,17 +1827,20 @@ def reset_password(token):
 
     except Exception:
         app.logger.exception(
-            "Error restableciendo contraseña"
+            "Error cambiando contraseña"
         )
 
         return (
-            "No se pudo cambiar la contraseña",
+            "No se pudo cambiar "
+            "la contraseña",
             500,
         )
 
     session.clear()
 
-    return redirect("/")
+    return redirect(
+        url_for("login")
+    )
 
 
 # ==================================================
@@ -1341,23 +1848,25 @@ def reset_password(token):
 # ==================================================
 
 @app.errorhandler(413)
-def archivo_demasiado_grande(_error):
+def archivo_grande(_error):
     return (
-        "El archivo supera el límite de 10 MB",
+        "El archivo supera "
+        "el límite de 10 MB",
         413,
     )
 
 
 @app.errorhandler(404)
-def pagina_no_encontrada(_error):
+def no_encontrado(_error):
     return (
-        "La página o el archivo no existe",
+        "La página o el archivo "
+        "no existe",
         404,
     )
 
 
 # ==================================================
-# EJECUTAR APLICACIÓN
+# EJECUTAR
 # ==================================================
 
 if __name__ == "__main__":

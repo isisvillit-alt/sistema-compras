@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>{{ titulo_mes }}</title>
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='historial.css'
+        ) }}"
+    >
+</head>
+
+<body>
+
+    <header class="top-header">
+
+        <div class="header-icon">
+            <i class="fa-solid fa-folder"></i>
+        </div>
+
+        <h1>{{ titulo_mes }}</h1>
+
+        <p>
+            Selecciona un día
+        </p>
+
+    </header>
+
+    <main class="page">
+
+        <nav class="toolbar">
+
+            <a
+                href="{{ url_for(
+                    'historial_meses'
+                ) }}"
+                class="back-button"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Meses
+            </a>
+
+            <a
+                href="{{ url_for('compras') }}"
+                class="new-button"
+            >
+                <i class="fa-solid fa-plus"></i>
+                Nueva compra
+            </a>
+
+        </nav>
+
+        {% if dias %}
+
+            <section class="folder-list">
+
+                {% for dia in dias %}
+
+                    <a
+                        href="{{ url_for(
+                            'historial_dia',
+                            fecha=dia.fecha.isoformat()
+                        ) }}"
+                        class="folder-link"
+                    >
+
+                        <div class="folder-left">
+
+                            <i
+                                class="fa-solid fa-folder-open
+                                folder-icon"
+                            ></i>
+
+                            <div>
+
+                                <span class="folder-title">
+                                    {{ dia.fecha.strftime(
+                                        "%d/%m/%Y"
+                                    ) }}
+                                </span>
+
+                                <span class="folder-detail">
+                                    {{ dia.cantidad }}
+
+                                    {% if dia.cantidad == 1 %}
+                                        compra
+                                    {% else %}
+                                        compras
+                                    {% endif %}
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <span class="folder-total">
+                            ${{ "%.2f"|format(
+                                dia.total|float
+                            ) }}
+                        </span>
+
+                    </a>
+
+                {% endfor %}
+
+            </section>
+
+        {% else %}
+
+            <section class="empty">
+
+                <i class="fa-solid fa-folder-open"></i>
+
+                <h2>No hay días disponibles</h2>
+
+            </section>
+
+        {% endif %}
+
+    </main>
+
+</body>
+</html>

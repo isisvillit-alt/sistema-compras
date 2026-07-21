@@ -4,22 +4,12 @@
 <head>
     <meta charset="UTF-8">
 
-    <link
-        rel="manifest"
-        href="/static/manifest.json"
-    >
-
-    <meta
-        name="theme-color"
-        content="#1a523c"
-    >
-
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1"
     >
 
-    <title>Registrar compra</title>
+    <title>Editar compra</title>
 
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
@@ -32,11 +22,6 @@
     >
 
     <style>
-        :root {
-            --bs-success: #1a523c;
-            --bs-success-rgb: 26, 82, 60;
-        }
-
         body {
             min-height: 100vh;
 
@@ -51,18 +36,10 @@
         }
 
         .navbar {
-            background-color: #1a523c !important;
-
-            box-shadow:
-                0 4px 12px rgba(0, 0, 0, 0.1);
+            background: #1a523c !important;
         }
 
-        .title {
-            color: white;
-            font-weight: bold;
-        }
-
-        .form-card {
+        .edit-card {
             border: none;
             border-radius: 22px;
 
@@ -80,26 +57,37 @@
             font-weight: bold;
         }
 
-        .optional {
-            color: #6c757d;
-            font-size: 12px;
-            font-weight: normal;
-        }
-
-        .helper {
-            margin-top: 7px;
-            color: #6c757d;
-            font-size: 13px;
-        }
-
-        .btn-success {
+        .save-button {
             padding: 13px;
 
-            border-color: #1a523c !important;
+            border: none;
             border-radius: 13px;
 
-            background-color: #1a523c !important;
+            background: #1a523c;
+            color: white;
 
+            font-weight: bold;
+        }
+
+        .current-evidence {
+            overflow: hidden;
+
+            border-radius: 16px;
+            background: #eef4f1;
+        }
+
+        .current-evidence img {
+            width: 100%;
+            max-height: 280px;
+            object-fit: cover;
+        }
+
+        .current-evidence a {
+            display: block;
+            padding: 16px;
+
+            color: #1a523c;
+            text-align: center;
             font-weight: bold;
         }
     </style>
@@ -109,30 +97,23 @@
 
     <nav class="navbar navbar-dark px-3 py-3">
 
-        <span class="navbar-brand title">
-            <i class="bi bi-cart-check"></i>
-            Registrar compra
+        <span class="navbar-brand fw-bold">
+
+            <i class="bi bi-pencil-square"></i>
+            Editar compra
+
         </span>
 
-        <div class="d-flex gap-2">
-
-            <a
-                href="{{ url_for('historial') }}"
-                class="btn btn-light btn-sm"
-            >
-                <i class="bi bi-clock-history"></i>
-                Historial
-            </a>
-
-            <a
-                href="{{ url_for('salir') }}"
-                class="btn btn-outline-light btn-sm"
-            >
-                <i class="bi bi-box-arrow-right"></i>
-                Salir
-            </a>
-
-        </div>
+        <a
+            href="{{ url_for(
+                'historial_dia',
+                fecha=compra.fecha.isoformat()
+            ) }}"
+            class="btn btn-light btn-sm"
+        >
+            <i class="bi bi-arrow-left"></i>
+            Volver
+        </a>
 
     </nav>
 
@@ -141,15 +122,9 @@
         style="max-width:620px;"
     >
 
-        <section class="card form-card p-4">
-
-            <h5 class="mb-4 text-center text-success">
-                <i class="bi bi-plus-circle"></i>
-                Nueva compra
-            </h5>
+        <section class="card edit-card p-4">
 
             <form
-                action="{{ url_for('guardar') }}"
                 method="POST"
                 enctype="multipart/form-data"
             >
@@ -161,10 +136,10 @@
                     </label>
 
                     <input
-                        class="form-control"
                         type="text"
                         name="producto"
-                        placeholder="Ej. Tomate, computadora..."
+                        class="form-control"
+                        value="{{ compra.producto }}"
                         maxlength="255"
                         required
                     >
@@ -178,10 +153,10 @@
                     </label>
 
                     <input
-                        class="form-control"
                         type="text"
                         name="proveedor"
-                        placeholder="Nombre del proveedor"
+                        class="form-control"
+                        value="{{ compra.proveedor }}"
                         maxlength="255"
                         required
                     >
@@ -192,24 +167,16 @@
 
                     <label class="form-label">
                         Nombre del cliente
-
-                        <span class="optional">
-                            (opcional)
-                        </span>
                     </label>
 
                     <input
-                        class="form-control"
                         type="text"
                         name="cliente"
-                        placeholder="Vacío si la compra es propia"
+                        class="form-control"
+                        value="{{ compra.cliente or '' }}"
+                        placeholder="Vacío significa compra propia"
                         maxlength="255"
                     >
-
-                    <div class="helper">
-                        Si lo dejas vacío aparecerá
-                        “Compra propia”.
-                    </div>
 
                 </div>
 
@@ -220,13 +187,12 @@
                     </label>
 
                     <input
-                        class="form-control"
                         type="number"
                         name="monto"
-                        placeholder="0.00"
+                        class="form-control"
+                        value="{{ compra.monto }}"
                         min="0"
                         step="0.01"
-                        inputmode="decimal"
                         required
                     >
 
@@ -235,46 +201,97 @@
                 <div class="mb-3">
 
                     <label class="form-label">
-                        Fecha de la compra
+                        Fecha
                     </label>
 
                     <input
-                        class="form-control"
                         type="date"
                         name="fecha"
-                        value="{{ fecha_hoy }}"
+                        class="form-control"
+                        value="{{ compra.fecha.isoformat() }}"
                         required
                     >
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Evidencia actual
+                    </label>
+
+                    <div class="current-evidence">
+
+                        {% set extension =
+                            compra.evidencia
+                            .rsplit(".", 1)[-1]
+                            |lower
+                        %}
+
+                        {% if extension in [
+                            "jpg",
+                            "jpeg",
+                            "png",
+                            "webp"
+                        ] %}
+
+                            <img
+                                src="{{ url_for(
+                                    'mostrar_archivo',
+                                    nombre_archivo=compra.evidencia
+                                ) }}"
+                                alt="Evidencia actual"
+                            >
+
+                        {% else %}
+
+                            <a
+                                href="{{ url_for(
+                                    'mostrar_archivo',
+                                    nombre_archivo=compra.evidencia
+                                ) }}"
+                                target="_blank"
+                            >
+                                <i class="bi bi-file-earmark-pdf"></i>
+                                Abrir PDF actual
+                            </a>
+
+                        {% endif %}
+
+                    </div>
 
                 </div>
 
                 <div class="mb-4">
 
                     <label class="form-label">
-                        Evidencia
+                        Cambiar evidencia
+
+                        <span class="text-muted fw-normal">
+                            (opcional)
+                        </span>
                     </label>
 
                     <input
-                        class="form-control"
                         type="file"
                         name="foto"
+                        class="form-control"
                         accept="image/jpeg,image/png,image/webp,application/pdf"
-                        required
                     >
 
-                    <div class="helper">
-                        JPG, PNG, WEBP o PDF.
-                        Máximo 10 MB.
+                    <div class="form-text">
+                        Déjalo vacío para conservar
+                        la evidencia actual.
                     </div>
 
                 </div>
 
                 <button
                     type="submit"
-                    class="btn btn-success w-100"
+                    class="save-button w-100"
                 >
                     <i class="bi bi-check-circle"></i>
-                    Guardar compra
+                    Guardar cambios
                 </button>
 
             </form>
@@ -282,14 +299,6 @@
         </section>
 
     </main>
-
-    <script>
-        if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register(
-                "/service-worker.js"
-            );
-        }
-    </script>
 
 </body>
 </html>
