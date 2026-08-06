@@ -537,16 +537,31 @@
 
             let resultado = {};
 
-            try {
-                resultado =
-                    await respuesta.json();
+         const textoRespuesta =
+    await respuesta.text();
 
-            } catch (error) {
-                throw new Error(
-                    "El servidor devolvió "
-                    + "una respuesta inválida"
-                );
-            }
+let resultado = {};
+
+try {
+    resultado = textoRespuesta
+        ? JSON.parse(textoRespuesta)
+        : {};
+
+} catch (error) {
+    if (!respuesta.ok) {
+        throw new Error(
+            textoRespuesta
+            || "Error del servidor ("
+            + respuesta.status
+            + ")"
+        );
+    }
+
+    throw new Error(
+        "El servidor devolvió "
+        + "una respuesta inválida"
+    );
+}
 
             if (respuesta.status === 401) {
                 const error = new Error(
