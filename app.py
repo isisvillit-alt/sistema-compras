@@ -1983,10 +1983,19 @@ def reset_password(token):
 
 @app.errorhandler(413)
 def archivo_grande(_error):
-    return (
-        "El archivo supera el límite de 10 MB",
-        413,
+    mensaje = (
+        "El archivo supera el límite de 10 MB"
     )
+
+    if request.path.startswith("/api/"):
+        return jsonify(
+            {
+                "ok": False,
+                "error": mensaje,
+            }
+        ), 413
+
+    return mensaje, 413
 
 
 @app.errorhandler(404)
