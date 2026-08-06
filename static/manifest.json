@@ -1,10 +1,11 @@
 {
-  "name": "Sistema Compras",
-  "short_name": "Compras",
-  "start_url": "/",
-  "scope": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#1a523c",
-  "orientation": "portrait"
+    "id": "/compras",
+    "name": "Sistema Compras",
+    "short_name": "Compras",
+    "start_url": "/compras",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#1a523c",
+    "orientation": "portrait"
 }
