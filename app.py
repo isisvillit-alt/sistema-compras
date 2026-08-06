@@ -847,10 +847,11 @@ def sincronizar_compra():
             }
         ), 401
 
-    sync_id = (
-        request.form.get("sync_id")
-        or ""
-    ).strip()
+   sync_id = (
+    request.form.get("sync_id")
+    or request.form.get("syncId")
+    or str(uuid.uuid4())
+).strip()
 
     producto = obtener_campo(
         "producto",
@@ -879,13 +880,6 @@ def sincronizar_compra():
         "date",
     )
 
-    if not sync_id:
-        return jsonify(
-            {
-                "ok": False,
-                "error": "Falta el identificador de sincronización",
-            }
-        ), 400
 
     if not producto:
         return jsonify(
