@@ -39,12 +39,14 @@
 
         body {
             min-height: 100vh;
+
             background:
                 linear-gradient(
                     135deg,
                     #f4f6f9,
                     #e9f5ee
                 );
+
             font-family: Arial, sans-serif;
         }
 
@@ -55,6 +57,7 @@
         .form-card {
             border: none;
             border-radius: 22px;
+
             box-shadow:
                 0 10px 25px rgba(0, 0, 0, 0.08);
         }
@@ -77,9 +80,12 @@
 
         .btn-success {
             padding: 13px;
+
             border-color: #1a523c !important;
             border-radius: 13px;
+
             background: #1a523c !important;
+
             font-weight: bold;
         }
     </style>
@@ -128,7 +134,39 @@
                 Nueva compra
             </h5>
 
+            <div
+                id="estadoConexion"
+                class="alert alert-secondary py-2"
+                role="status"
+                aria-live="polite"
+            >
+                Comprobando conexión...
+            </div>
+
+            <div
+                class="d-flex justify-content-between align-items-center mb-3"
+            >
+
+                <span
+                    id="comprasPendientes"
+                    class="small text-muted"
+                >
+                    0 compras pendientes
+                </span>
+
+                <button
+                    type="button"
+                    id="sincronizarButton"
+                    class="btn btn-outline-success btn-sm"
+                >
+                    <i class="bi bi-arrow-repeat"></i>
+                    Sincronizar
+                </button>
+
+            </div>
+
             <form
+                id="compraForm"
                 action="{{ url_for('guardar') }}"
                 method="POST"
                 enctype="multipart/form-data"
@@ -278,6 +316,7 @@
 
                 <button
                     type="submit"
+                    id="guardarCompraButton"
                     class="btn btn-success w-100"
                 >
                     <i class="bi bi-check-circle"></i>
@@ -289,6 +328,566 @@
         </section>
 
     </main>
+
+    <script
+        src="{{ url_for(
+            'static',
+            filename='js/offline-db.js'
+        ) }}"
+    ></script>
+
+    <script>
+        const formulario = document.getElementById(
+            "compraForm"
+        );
+
+        const estadoConexion = document.getElementById(
+            "estadoConexion"
+        );
+
+        const textoPendientes = document.getElementById(
+            "comprasPendientes"
+        );
+
+        const sincronizarButton = document.getElementById(
+            "sincronizarButton"
+        );
+
+        const guardarButton = document.getElementById(
+            "guardarCompraButton"
+        );
+
+        const usuarioActual =
+            "{{ session.get('user_id', '') }}";
+
+        const MAX_ARCHIVO_BYTES =
+            10 * 1024 * 1024;
+
+
+        function crearSyncId() {
+            if (
+                window.crypto
+                && typeof crypto.randomUUID === "function"
+            ) {
+                return crypto.randomUUID();
+            }
+
+            return (
+                Date.now().toString(36)
+                + "-"
+                + Math.random().toString(36).slice(2)
+            );
+        }
+
+
+        function fechaLocalHoy() {
+            const ahora = new Date();
+
+            const fechaLocal = new Date(
+                ahora.getTime()
+                - ahora.getTimezoneOffset() * 60000
+            );
+
+            return fechaLocal
+                .toISOString()
+                .slice(0, 10);
+        }
+
+
+        function comprasDelUsuario(compras) {
+            return compras.filter(
+                function (compra) {
+                    return (
+                        !compra.usuario_id
+                        || String(compra.usuario_id)
+                            === String(usuarioActual)
+                    );
+                }
+            );
+        }
+
+
+        function mostrarEstado(
+            mensaje,
+            tipo
+        ) {
+            estadoConexion.textContent =
+                mensaje;
+
+            estadoConexion.className =
+                "alert py-2 alert-" + tipo;
+        }
+
+
+        function actualizarEstadoConexion() {
+            if (navigator.onLine) {
+                mostrarEstado(
+                    "Con conexión a internet",
+                    "success"
+                );
+            } else {
+                mostrarEstado(
+                    "Sin conexión. Las compras se "
+                    + "guardarán en este dispositivo.",
+                    "warning"
+                );
+            }
+        }
+
+
+        async function obtenerPendientesDelUsuario() {
+            const compras =
+                await OfflineDB
+                    .obtenerComprasPendientes();
+
+            return comprasDelUsuario(
+                compras
+            );
+        }
+
+
+        async function actualizarContadorPendientes() {
+            try {
+                const compras =
+                    await obtenerPendientesDelUsuario();
+
+                const cantidad =
+                    compras.length;
+
+                textoPendientes.textContent =
+                    cantidad === 1
+                        ? "1 compra pendiente"
+                        : cantidad
+                            + " compras pendientes";
+
+                return cantidad;
+
+            } catch (error) {
+                console.error(
+                    "Error consultando pendientes:",
+                    error
+                );
+
+                textoPendientes.textContent =
+                    "No se pudieron consultar "
+                    + "los pendientes";
+
+                return 0;
+            }
+        }
+
+
+        function crearFormData(compra) {
+            const datos =
+                new FormData();
+
+            datos.append(
+                "sync_id",
+                compra.sync_id
+            );
+
+            datos.append(
+                "producto",
+                compra.producto
+            );
+
+            datos.append(
+                "proveedor",
+                compra.proveedor
+            );
+
+            datos.append(
+                "cliente",
+                compra.cliente
+            );
+
+            datos.append(
+                "monto",
+                compra.monto
+            );
+
+            datos.append(
+                "fecha",
+                compra.fecha
+            );
+
+            datos.append(
+                "foto",
+                compra.evidencia,
+                compra.nombre_evidencia
+            );
+
+            return datos;
+        }
+
+
+        async function enviarCompraPendiente(
+            compra
+        ) {
+            const respuesta = await fetch(
+                "/api/sincronizar_compra",
+                {
+                    method: "POST",
+                    body: crearFormData(
+                        compra
+                    ),
+                    credentials: "same-origin"
+                }
+            );
+
+            let resultado = {};
+
+            try {
+                resultado =
+                    await respuesta.json();
+
+            } catch (error) {
+                throw new Error(
+                    "El servidor devolvió "
+                    + "una respuesta inválida"
+                );
+            }
+
+            if (respuesta.status === 401) {
+                const error = new Error(
+                    "La sesión ha expirado. "
+                    + "Inicia sesión para sincronizar."
+                );
+
+                error.sesionExpirada = true;
+
+                throw error;
+            }
+
+            if (
+                !respuesta.ok
+                || !resultado.ok
+            ) {
+                throw new Error(
+                    resultado.error
+                    || "No se pudo sincronizar "
+                    + "la compra"
+                );
+            }
+
+            return resultado;
+        }
+
+
+        async function sincronizarPendientes() {
+            if (!navigator.onLine) {
+                mostrarEstado(
+                    "No hay internet. Las compras "
+                    + "continúan guardadas en este "
+                    + "dispositivo.",
+                    "warning"
+                );
+
+                return;
+            }
+
+            let compras;
+
+            try {
+                compras =
+                    await obtenerPendientesDelUsuario();
+
+            } catch (error) {
+                console.error(
+                    error
+                );
+
+                mostrarEstado(
+                    "No se pudieron consultar "
+                    + "las compras pendientes.",
+                    "danger"
+                );
+
+                return;
+            }
+
+            if (compras.length === 0) {
+                mostrarEstado(
+                    "No hay compras pendientes "
+                    + "de sincronización.",
+                    "success"
+                );
+
+                await actualizarContadorPendientes();
+
+                return;
+            }
+
+            sincronizarButton.disabled =
+                true;
+
+            let sincronizadas = 0;
+
+            for (const compra of compras) {
+                mostrarEstado(
+                    "Sincronizando "
+                    + (sincronizadas + 1)
+                    + " de "
+                    + compras.length
+                    + "...",
+                    "info"
+                );
+
+                try {
+                    await enviarCompraPendiente(
+                        compra
+                    );
+
+                    await OfflineDB
+                        .eliminarCompraPendiente(
+                            compra.sync_id
+                        );
+
+                    sincronizadas++;
+
+                } catch (error) {
+                    console.error(
+                        "Error sincronizando compra:",
+                        error
+                    );
+
+                    if (error.sesionExpirada) {
+                        mostrarEstado(
+                            error.message,
+                            "danger"
+                        );
+                    } else {
+                        mostrarEstado(
+                            "La sincronización se "
+                            + "interrumpió. Los datos "
+                            + "siguen guardados en este "
+                            + "dispositivo.",
+                            "warning"
+                        );
+                    }
+
+                    break;
+                }
+            }
+
+            sincronizarButton.disabled =
+                false;
+
+            await actualizarContadorPendientes();
+
+            if (
+                sincronizadas
+                === compras.length
+            ) {
+                mostrarEstado(
+                    "Todas las compras fueron "
+                    + "sincronizadas.",
+                    "success"
+                );
+            }
+        }
+
+
+        formulario.addEventListener(
+            "submit",
+            async function (evento) {
+                evento.preventDefault();
+
+                if (
+                    !formulario.reportValidity()
+                ) {
+                    return;
+                }
+
+                const archivo =
+                    document.getElementById(
+                        "foto"
+                    ).files[0];
+
+                if (!archivo) {
+                    mostrarEstado(
+                        "Debes seleccionar "
+                        + "una evidencia.",
+                        "danger"
+                    );
+
+                    return;
+                }
+
+                if (
+                    archivo.size
+                    > MAX_ARCHIVO_BYTES
+                ) {
+                    mostrarEstado(
+                        "La evidencia supera "
+                        + "el límite de 10 MB.",
+                        "danger"
+                    );
+
+                    return;
+                }
+
+                const compra = {
+                    sync_id:
+                        crearSyncId(),
+
+                    usuario_id:
+                        usuarioActual,
+
+                    producto:
+                        document.getElementById(
+                            "producto"
+                        ).value.trim(),
+
+                    proveedor:
+                        document.getElementById(
+                            "proveedor"
+                        ).value.trim(),
+
+                    cliente:
+                        document.getElementById(
+                            "cliente"
+                        ).value.trim(),
+
+                    monto:
+                        document.getElementById(
+                            "monto"
+                        ).value,
+
+                    fecha:
+                        document.getElementById(
+                            "fecha"
+                        ).value,
+
+                    evidencia:
+                        archivo,
+
+                    nombre_evidencia:
+                        archivo.name
+                        || "evidencia",
+
+                    tipo_evidencia:
+                        archivo.type
+                        || "",
+
+                    fecha_creacion:
+                        new Date()
+                            .toISOString()
+                };
+
+                guardarButton.disabled =
+                    true;
+
+                sincronizarButton.disabled =
+                    true;
+
+                try {
+                    /*
+                     * Primero se guarda localmente.
+                     * Así no se pierde si internet
+                     * falla durante el envío.
+                     */
+                    await OfflineDB
+                        .guardarCompraPendiente(
+                            compra
+                        );
+
+                    formulario.reset();
+
+                    document.getElementById(
+                        "fecha"
+                    ).value =
+                        fechaLocalHoy();
+
+                    await actualizarContadorPendientes();
+
+                    mostrarEstado(
+                        "Compra guardada en este "
+                        + "dispositivo. Pendiente "
+                        + "de sincronización.",
+                        "info"
+                    );
+
+                    if (navigator.onLine) {
+                        await sincronizarPendientes();
+                    }
+
+                } catch (error) {
+                    console.error(
+                        "Error guardando localmente:",
+                        error
+                    );
+
+                    if (navigator.onLine) {
+                        mostrarEstado(
+                            "El almacenamiento local "
+                            + "falló. Intentando el "
+                            + "guardado normal...",
+                            "warning"
+                        );
+
+                        /*
+                         * Si IndexedDB falla pero
+                         * sí hay internet, se envía
+                         * directamente a /guardar.
+                         */
+                        formulario.submit();
+
+                        return;
+                    }
+
+                    mostrarEstado(
+                        "No se pudo guardar la compra "
+                        + "en este dispositivo.",
+                        "danger"
+                    );
+
+                } finally {
+                    guardarButton.disabled =
+                        false;
+
+                    sincronizarButton.disabled =
+                        false;
+                }
+            }
+        );
+
+
+        sincronizarButton.addEventListener(
+            "click",
+            sincronizarPendientes
+        );
+
+
+        window.addEventListener(
+            "online",
+            async function () {
+                actualizarEstadoConexion();
+
+                await sincronizarPendientes();
+            }
+        );
+
+
+        window.addEventListener(
+            "offline",
+            actualizarEstadoConexion
+        );
+
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            async function () {
+                actualizarEstadoConexion();
+
+                await actualizarContadorPendientes();
+
+                if (navigator.onLine) {
+                    await sincronizarPendientes();
+                }
+            }
+        );
+    </script>
 
 </body>
 </html>
