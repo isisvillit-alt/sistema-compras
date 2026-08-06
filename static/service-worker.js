@@ -1,4 +1,4 @@
-const CACHE_NAME = "sistema-compras-offline-v1";
+const CACHE_NAME = "sistema-compras-offline-v2";
 
 const CORE_ASSETS = [
     "/compras",
