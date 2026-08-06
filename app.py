@@ -1,13 +1,13 @@
 import os
+import re
 import uuid
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from functools import wraps
+from urllib.parse import unquote, urlparse
 
 import cloudinary
 import cloudinary.uploader
-from cloudinary.exceptions import Error as CloudinaryError
-
 import psycopg
 from psycopg.errors import UniqueViolation
 from psycopg.rows import dict_row
@@ -171,7 +171,11 @@ def nombre_mes(numero):
 
 app = Flask(__name__)
 
-cloudinary.config(secure=True)
+# Lee automáticamente CLOUDINARY_URL desde las variables
+# de entorno configuradas en Render.
+cloudinary.config(
+    secure=True
+)
 
 app.secret_key = variable_obligatoria(
     "SECRET_KEY"
@@ -328,30 +332,165 @@ def guardar_evidencia(archivo):
             "El nombre del archivo no es válido"
         )
 
-    nombre_unico = (
-        f"{uuid.uuid4()}_"
-        f"{nombre_seguro}"
+    extension = (
+        nombre_seguro
+        .rsplit(".", 1)[1]
+        .lower()
     )
 
-    ruta_archivo = os.path.join(
-        app.config["UPLOAD_FOLDER"],
-        nombre_unico,
+    identificador = str(
+        uuid.uuid4()
     )
 
-    archivo.save(
-        ruta_archivo
+    if extension == "pdf":
+        tipo_recurso = "raw"
+        public_id = (
+            f"sistema-compras/"
+            f"{identificador}.pdf"
+        )
+
+    else:
+        tipo_recurso = "image"
+        public_id = (
+            f"sistema-compras/"
+            f"{identificador}"
+        )
+
+    archivo.stream.seek(0)
+
+    resultado = cloudinary.uploader.upload(
+        archivo.stream,
+        resource_type=tipo_recurso,
+        public_id=public_id,
+        overwrite=False,
     )
 
-    return nombre_unico, ruta_archivo
+    evidencia_url = resultado.get(
+        "secure_url"
+    )
+
+    if not evidencia_url:
+        raise RuntimeError(
+            "Cloudinary no devolvió la URL "
+            "de la evidencia"
+        )
+
+    return evidencia_url
 
 
-def borrar_evidencia(nombre_archivo):
-    if not nombre_archivo:
+def obtener_datos_cloudinary(evidencia):
+    if not evidencia:
+        return None
+
+    if not evidencia.startswith(
+        ("http://", "https://")
+    ):
+        return None
+
+    url = urlparse(
+        evidencia
+    )
+
+    if url.netloc != "res.cloudinary.com":
+        return None
+
+    partes = [
+        unquote(parte)
+        for parte in url.path.split("/")
+        if parte
+    ]
+
+    try:
+        indice_upload = partes.index(
+            "upload"
+        )
+
+    except ValueError:
+        return None
+
+    if indice_upload < 1:
+        return None
+
+    tipo_recurso = partes[
+        indice_upload - 1
+    ]
+
+    if tipo_recurso not in {
+        "image",
+        "raw",
+        "video",
+    }:
+        return None
+
+    partes_public_id = partes[
+        indice_upload + 1:
+    ]
+
+    if (
+        partes_public_id
+        and re.fullmatch(
+            r"v\d+",
+            partes_public_id[0],
+        )
+    ):
+        partes_public_id = (
+            partes_public_id[1:]
+        )
+
+    public_id = "/".join(
+        partes_public_id
+    )
+
+    if (
+        tipo_recurso == "image"
+        and "." in public_id
+    ):
+        public_id = public_id.rsplit(
+            ".",
+            1,
+        )[0]
+
+    if not public_id:
+        return None
+
+    return tipo_recurso, public_id
+
+
+def borrar_evidencia(evidencia):
+    if not evidencia:
         return
 
+    datos_cloudinary = (
+        obtener_datos_cloudinary(
+            evidencia
+        )
+    )
+
+    if datos_cloudinary:
+        tipo_recurso, public_id = (
+            datos_cloudinary
+        )
+
+        try:
+            cloudinary.uploader.destroy(
+                public_id,
+                resource_type=tipo_recurso,
+                invalidate=True,
+            )
+
+        except Exception:
+            app.logger.exception(
+                "No se pudo borrar la evidencia "
+                "de Cloudinary"
+            )
+
+        return
+
+    # Compatibilidad con archivos antiguos guardados
+    # localmente antes de utilizar Cloudinary.
     ruta_archivo = os.path.join(
         app.config["UPLOAD_FOLDER"],
-        nombre_archivo,
+        evidencia,
     )
 
     if os.path.exists(ruta_archivo):
@@ -362,7 +501,7 @@ def borrar_evidencia(nombre_archivo):
 
         except OSError:
             app.logger.exception(
-                "No se pudo borrar la evidencia"
+                "No se pudo borrar la evidencia local"
             )
 
 
@@ -614,10 +753,7 @@ def guardar():
             fecha_texto
         )
 
-        (
-            nombre_evidencia,
-            ruta_evidencia,
-        ) = guardar_evidencia(
+        evidencia_url = guardar_evidencia(
             request.files.get("foto")
             or request.files.get("evidencia")
         )
@@ -667,7 +803,7 @@ def guardar():
                         cliente or None,
                         monto,
                         fecha,
-                        nombre_evidencia,
+                        evidencia_url,
                         session["user_id"],
                     ),
                 )
@@ -677,12 +813,9 @@ def guardar():
             "Error guardando compra"
         )
 
-        if os.path.exists(
-            ruta_evidencia
-        ):
-            os.remove(
-                ruta_evidencia
-            )
+        borrar_evidencia(
+            evidencia_url
+        )
 
         return (
             "No se pudo guardar la compra",
@@ -1205,19 +1338,18 @@ def editar_compra(id):
         compra["evidencia"]
     )
 
-    ruta_nueva = None
+    evidencia_subida = False
 
     if (
         archivo_nuevo is not None
         and archivo_nuevo.filename
     ):
         try:
-            (
-                evidencia_nueva,
-                ruta_nueva,
-            ) = guardar_evidencia(
+            evidencia_nueva = guardar_evidencia(
                 archivo_nuevo
             )
+
+            evidencia_subida = True
 
         except ValueError as error:
             return str(error), 400
@@ -1268,12 +1400,9 @@ def editar_compra(id):
             "Error actualizando compra"
         )
 
-        if (
-            ruta_nueva
-            and os.path.exists(ruta_nueva)
-        ):
-            os.remove(
-                ruta_nueva
+        if evidencia_subida:
+            borrar_evidencia(
+                evidencia_nueva
             )
 
         return (
@@ -1282,7 +1411,7 @@ def editar_compra(id):
         )
 
     if (
-        ruta_nueva
+        evidencia_subida
         and compra["evidencia"]
         != evidencia_nueva
     ):
