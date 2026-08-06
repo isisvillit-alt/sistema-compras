@@ -14,6 +14,7 @@ from psycopg.rows import dict_row
 
 from flask import (
     Flask,
+    jsonify,
     abort,
     redirect,
     render_template,
