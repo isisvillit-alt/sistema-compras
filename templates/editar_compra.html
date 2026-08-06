@@ -231,41 +231,73 @@
 
                     <div class="current-evidence">
 
-                        {% set extension =
-                            compra.evidencia
-                            .rsplit(".", 1)[-1]
-                            |lower
-                        %}
+                       {% if compra.evidencia %}
 
-                        {% if extension in [
-                            "jpg",
-                            "jpeg",
-                            "png",
-                            "webp"
-                        ] %}
+    {% if compra.evidencia.startswith("http") %}
 
-                            <img
-                                src="{{ url_for(
-                                    'mostrar_archivo',
-                                    nombre_archivo=compra.evidencia
-                                ) }}"
-                            >
+        {% set evidencia_url =
+            compra.evidencia
+        %}
 
-                        {% else %}
+    {% else %}
 
-                            <a
-                                href="{{ url_for(
-                                    'mostrar_archivo',
-                                    nombre_archivo=compra.evidencia
-                                ) }}"
-                                target="_blank"
-                                class="d-block p-3"
-                            >
-                                Abrir PDF actual
-                            </a>
+        {% set evidencia_url = url_for(
+            "mostrar_archivo",
+            nombre_archivo=compra.evidencia
+        ) %}
 
-                        {% endif %}
+    {% endif %}
 
+    {% set extension =
+        compra.evidencia
+        .split("?", 1)[0]
+        .rsplit(".", 1)[-1]
+        |lower
+    %}
+
+    {% if extension in [
+        "jpg",
+        "jpeg",
+        "png",
+        "webp"
+    ] %}
+
+        <img
+            src="{{ evidencia_url }}"
+            alt="Evidencia actual"
+        >
+
+    {% elif extension == "pdf" %}
+
+        <a
+            href="{{ evidencia_url }}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="d-block p-3"
+        >
+            Abrir PDF actual
+        </a>
+
+    {% else %}
+
+        <a
+            href="{{ evidencia_url }}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="d-block p-3"
+        >
+            Abrir evidencia actual
+        </a>
+
+    {% endif %}
+
+{% else %}
+
+    <div class="p-3 text-muted">
+        No hay evidencia disponible
+    </div>
+
+{% endif %}
                     </div>
 
                 </div>
