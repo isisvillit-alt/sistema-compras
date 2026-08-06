@@ -4,6 +4,10 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from functools import wraps
 
+import cloudinary
+import cloudinary.uploader
+from cloudinary.exceptions import Error as CloudinaryError
+
 import psycopg
 from psycopg.errors import UniqueViolation
 from psycopg.rows import dict_row
@@ -166,6 +170,8 @@ def nombre_mes(numero):
 # ==================================================
 
 app = Flask(__name__)
+
+cloudinary.config(secure=True)
 
 app.secret_key = variable_obligatoria(
     "SECRET_KEY"
