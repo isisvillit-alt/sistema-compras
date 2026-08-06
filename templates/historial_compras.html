@@ -109,13 +109,29 @@
                         }}"
                     >
 
-                        {% if compra.evidencia %}
+                       {% if compra.evidencia %}
 
-                            {% set extension =
-                                compra.evidencia
-                                .rsplit(".", 1)[-1]
-                                |lower
-                            %}
+    {% if compra.evidencia.startswith("http") %}
+
+        {% set evidencia_url =
+            compra.evidencia
+        %}
+
+    {% else %}
+
+        {% set evidencia_url = url_for(
+            "mostrar_archivo",
+            nombre_archivo=compra.evidencia
+        ) %}
+
+    {% endif %}
+
+    {% set extension =
+        compra.evidencia
+        .split("?", 1)[0]
+        .rsplit(".", 1)[-1]
+        |lower
+    %}
 
                             {% if extension in [
                                 "jpg",
@@ -126,10 +142,7 @@
 
                                 <img
                                     class="evidence-image"
-                                    src="{{ url_for(
-                                        'mostrar_archivo',
-                                        nombre_archivo=compra.evidencia
-                                    ) }}"
+                                    src="{{ evidencia_url }}"
                                     alt="Evidencia"
                                     onclick="abrirImagen(this.src)"
                                 >
@@ -141,11 +154,9 @@
                                     <i class="fa-solid fa-file-pdf"></i>
 
                                     <a
-                                        href="{{ url_for(
-                                            'mostrar_archivo',
-                                            nombre_archivo=compra.evidencia
-                                        ) }}"
+                                       href="{{ evidencia_url }}"
                                         target="_blank"
+                                         rel="noopener noreferrer"
                                     >
                                         Abrir PDF
                                     </a>
