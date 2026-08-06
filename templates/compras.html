@@ -657,14 +657,12 @@
                             "danger"
                         );
                     } else {
-                        mostrarEstado(
-                            "La sincronización se "
-                            + "interrumpió. Los datos "
-                            + "siguen guardados en este "
-                            + "dispositivo.",
-                            "warning"
-                        );
-                    }
+    mostrarEstado(
+        error.message
+        || "No se pudo sincronizar la compra.",
+        "danger"
+    );
+}
 
                     break;
                 }
